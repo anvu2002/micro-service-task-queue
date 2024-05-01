@@ -36,4 +36,3 @@ app.include_router(service_endpoints_router)
 # Docker Port = 5000
 if __name__ == "__main__":
     uvicorn.run("main:app", port=8850, log_level="info")
-    
