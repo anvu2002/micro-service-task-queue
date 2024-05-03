@@ -1,1 +1,0 @@
-from .service_endpoints_router import router as service_endpoints_router
