@@ -30,6 +30,7 @@ uvicorn==0.29.0
 websockets==12.0
 
 matplotlib
+opencv-python
 aiofiles
 python-multipart
 pyyaml
