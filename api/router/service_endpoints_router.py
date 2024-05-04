@@ -22,7 +22,7 @@ if not isdir:
 router = APIRouter(prefix="/api", tags=["api"])
 
 
-@router.post("/api/process")
+@router.post("/process")
 async def process(files: List[UploadFile] = File(...)):
     tasks = []
     try:
@@ -53,7 +53,7 @@ async def process(files: List[UploadFile] = File(...)):
         return JSONResponse(status_code=400, content=[])
 
 
-@router.get("/api/result/{task_id}", response_model=Prediction)
+@router.get("/result/{task_id}", response_model=Prediction)
 async def result(task_id: str):
     task = AsyncResult(task_id)
 
@@ -77,7 +77,7 @@ async def result(task_id: str):
     )
 
 
-@router.get("/api/status/{task_id}", response_model=Prediction)
+@router.get("/status/{task_id}", response_model=Prediction)
 async def status(task_id: str):
     task = AsyncResult(task_id)
     return JSONResponse(
