@@ -18,7 +18,7 @@ services:
       dockerfile: api/Dockerfile
       context: .
     image: alex_worker
-    command: sh -c "cd api && uvicorn app:app --host 0.0.0.0 --port 8000 & cd ../ & celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 5"
+    command: sh -c "cd api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd ../ & celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 5"
     volumes:
       - .:/app
     ports:

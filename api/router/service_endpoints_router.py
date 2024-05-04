@@ -9,7 +9,7 @@ from loguru import logger
 from typing import List
 import uuid
 
-from celery_tasks.tasks import predict_image
+from celery_tasks.tasks import predict_image, get_sim
 from celery.result import AsyncResult
 from models import Task, Prediction
 
@@ -20,6 +20,33 @@ if not isdir:
     os.makedirs(UPLOAD_FOLDER)
 
 router = APIRouter(prefix="/api", tags=["api"])
+
+
+@router.post("/get_similarity")
+async def get_similarity(request: Request):
+    """
+    Usage: Image selection through similarity against prompt keywords
+    request format:
+    {
+        "images": ["./images/1.jpg", "https://test.com/1.jpg"],
+        "prompt": "google search prompt"
+    }
+    """
+    tasks = []
+    try:
+        d = {}
+        data = await request.json()
+        task_id = get_sim.delay(data)
+        d["task_id"] = str(task_id)
+        d["status"] = "PROCESSING"
+        d["url_result"] = f"/api/result/{task_id}"
+        tasks.append(d)
+        return JSONResponse(status_code=202, content=tasks)
+    except Exception as err:
+        logger.error(err)
+        return JSONResponse(
+            status_code=400, content={"TASK": "get_similarity", "status": "FAILED"}
+        )
 
 
 @router.post("/process")
@@ -61,7 +88,11 @@ async def result(task_id: str):
     if not task.ready():
         return JSONResponse(
             status_code=202,
-            content={"task_id": str(task_id), "status": task.status, "result": ""},
+            content={
+                "task_id": str(task_id),
+                "status": task.status,
+                "result": "[PENDING...]",
+            },
         )
 
     # Task done: return the value
@@ -82,5 +113,5 @@ async def status(task_id: str):
     task = AsyncResult(task_id)
     return JSONResponse(
         status_code=200,
-        content={"task_id": str(task_id), "status": task.status, "result": ""},
+        content={"task_id": str(task_id), "status": task.status},
     )
