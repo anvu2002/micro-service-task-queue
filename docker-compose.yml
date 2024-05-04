@@ -18,18 +18,17 @@ services:
       dockerfile: api/Dockerfile
       context: .
     image: alex_worker
-    command: sh -c "cd api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd ../ & celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 5"
+    command: sh -c "cd api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd ../ & celery -A celery_tasks.app_worker worker -l INFO --pool=solo"
     volumes:
       - .:/app
     ports:
       - "8000:8000"
 
-  # webapp:
-  #   container_name: webapp
-  #   build:
-  #     dockerfile: webapp/Dockerfile
-  #     context: .
-  #   image: alex_webapp
-  #   command: sh -c "cd /app && uvicorn app:app --host 0.0.0.0 --port 80 --reload"
-  #   ports:
-  #     - "80:80"
+  webapp:
+    container_name: webapp
+    build:
+      dockerfile: webapp/Dockerfile
+      context: .
+    command: sh -c "cd /app && uvicorn app:app --host 0.0.0.0 --port 80 --reload"
+    ports:
+      - "80:80"
