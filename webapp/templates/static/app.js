@@ -76,8 +76,15 @@ jQuery(document).ready(function () {
         $.ajax({
             url: URL + '/api/get_similarity',
             type: "post",
-            data: JSON.stringify({ images: [], prompt: prompt }),
+            data: JSON.stringify({ images: ["./images/5.jpg", "./images/6.jpg","./images/7.jpg","./images/8.jpg","./images/9.jpg"], prompt: prompt }),
             contentType: 'application/json',
+            beforeSend: function () {
+                results = []
+                status_list = []
+                $("#table_result > tbody").html('');
+                $('#row_detail').hide();
+                $("#row_results").hide();
+            },
             success: function (jsondata, textStatus, jqXHR) {
                 // Handle success
                 console.log(jsondata);
@@ -85,9 +92,46 @@ jQuery(document).ready(function () {
             error: function (jqXHR, textStatus, errorThrown) {
                 // Handle error
                 console.log(jqXHR);
+            },
+        }).done(function (jsondata, textStatus, jqXHR) {
+            for (i = 0; i < jsondata.length; i++) {
+                task_id = jsondata[i]['task_id']
+                status = jsondata[i]['status']
+                results.push(URL + jsondata[i]['url_result'])
+                status_list.push(task_id)
+                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view" data=${i}>View</a>`
+                $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
+                $("#row_results").show();
             }
+
+            var interval = setInterval(refresh, 1000);
+
+            function refresh() {
+                n_success = 0
+                for (i = 0; i < status_list.length; i++) {
+                    $.ajax({
+                        url: URL_STATUS + status_list[i],
+                        success: function (data) {
+                            id = status_list[i]
+                            status = data['status']
+                            $('#' + id).html(status)
+                            if ((status == 'SUCCESS') || (status == 'FAILED')) {
+                                $($('#' + id).siblings()[1]).children().show()
+                                n_success++
+                            }
+                        },
+                        async: false
+                    });
+                }
+                if (n_success == status_list.length) {
+                    clearInterval(interval);
+                }
+            }
+        }).fail(function (jsondata, textStatus, jqXHR) {
+            console.log(jsondata)
+            $("#row_results").hide();
         });
-    });
+    })
 
     $(document).on('click', '#btn-view', function (e) {
         id = $(e.target).attr('data')
