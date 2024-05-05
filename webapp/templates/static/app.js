@@ -6,6 +6,7 @@ var res = ''
 jQuery(document).ready(function () {
     $('#row_detail').hide()
     $("#row_results").hide();
+
     $('#btn-process').on('click', function () {
         var form_data = new FormData();
         files = $('#input_file').prop('files')
@@ -67,6 +68,26 @@ jQuery(document).ready(function () {
         });
 
     })
+
+    $('#btn-caption').on('click', function () {
+        var prompt = $('#input_prompt').val();
+
+        console.log(prompt)
+        $.ajax({
+            url: URL + '/api/get_similarity',
+            type: "post",
+            data: JSON.stringify({ images: [], prompt: prompt }),
+            contentType: 'application/json',
+            success: function (jsondata, textStatus, jqXHR) {
+                // Handle success
+                console.log(jsondata);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                // Handle error
+                console.log(jqXHR);
+            }
+        });
+    });
 
     $(document).on('click', '#btn-view', function (e) {
         id = $(e.target).attr('data')
