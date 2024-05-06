@@ -25,6 +25,8 @@ if not isdir:
 
 app = FastAPI(title="ML_Services", docs_url="/", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_FOLDER), name="static")
+app.mount("/img", StaticFiles(directory="images/"), name="img")
+
 
 os.environ["no_proxy"] = "*"
 os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"

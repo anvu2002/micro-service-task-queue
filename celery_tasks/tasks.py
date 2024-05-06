@@ -10,6 +10,23 @@ from .core import Similarity
 from typing import List
 
 
+# region Exception Class
+class CeleryTasksException(Exception):
+    """Catch Celery Tasks Execeptions"""
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def __str__(self):
+        err_msg = ""
+        for k, v in vars(self).items():
+            err_msg += f"{k} : {v}, "
+        return err_msg
+
+
+# endregion
+
 # region Celery Tasks Models
 class PredictTask(Task):
     def __init__(self):
@@ -24,9 +41,6 @@ class PredictTask(Task):
         return self.run(*args, **kwargs)
 
 
-# endregion
-
-
 class SimilarityTask(Task):
     def __init__(self):
         super().__init__()
@@ -39,6 +53,8 @@ class SimilarityTask(Task):
             logger.info("Similarity Model loaded")
         return self.run(*args, **kwargs)
 
+
+# endregion
 
 # region register Celery Tasks
 @app.task(ignore_result=False, bind=True, base=PredictTask)
@@ -58,15 +74,25 @@ def predict_image(self, data):
 def get_sim(self, data):
     similairty_results: List[dict] = []
     try:
-        image_urls, prompt_text = data["images"], data["prompt"]
-        logger.info(f"Processing Similarity on keyword: {prompt_text}]\n")
+        image_urls, prompt_text = data.get("images"), data.get("prompt")
+        logger.info(f"Processing similarity on keyword: {prompt_text}\n")
+        logger.debug(f"image_urls = {image_urls}")
+
+        if not image_urls:
+            raise CeleryTasksException(
+                task_name=get_sim.__name__, err_str="Images URLs or Location are empty"
+            )
 
         similairty_results = self.model.similarity(image_urls, prompt_text)
+        if not similairty_results:
+            raise CeleryTasksException(
+                task_name=get_sim.__name__, err_str="EMPTY similarity result"
+            )
         logger.debug(f"results = {similairty_results}")
 
         return {"task": "get_sim", "status": "SUCCESS", "result": similairty_results}
-    except Exception as e:
-        return {"status": "FAIL", "result": "NOTHING"}
+    except (CeleryTasksException, Exception) as e:
+        return {"task": "get_sim", "status": "FAIL", "error": str(e)}
 
 
 # endregion

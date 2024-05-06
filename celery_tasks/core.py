@@ -70,7 +70,9 @@ class Similarity:
             logger.info(f"Image {image_url}'s descrption is: {result}\n")
 
         except Exception as e:
-            logger.error(f"{e} occured when processing captioning image {image_url}")
+            logger.error(
+                f"Error '{e}' occured when processing captioning image {image_url}"
+            )
 
         return result
 
@@ -91,7 +93,7 @@ class Similarity:
                 {"url": image_url, "score": score, "description": image_text}
             )
 
-        return sim_results
+        return sim_results if sim_results else None
 
 
 def text_to_speech(text: str, save_path: str) -> str:

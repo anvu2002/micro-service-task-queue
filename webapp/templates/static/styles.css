@@ -1,11 +1,25 @@
+body {
+	font-family: Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	background-color: #534926de;
+}
+
+.container {
+	width: 80%;
+	margin: 0 auto;
+	padding: 20px;
+	text-align: left;
+}
+
 h2 {
 	font-size: 30px;
 	text-align: center;
 	width: 100%;
-	background: #1462dc;
+	background: #1c1b00;
 	padding: 13px;
 	line-height: 30px;
-	color: white;
+	color: rgb(199, 86, 86);
 }
 
 h4 {
@@ -48,7 +62,7 @@ span.class-name {
 	display: none;
 	text-align: center;
 	width: 100%;
-	background: #96c0ff;
+	background: #081830;
 }
 
 .col-sm-10 {
@@ -66,4 +80,142 @@ textarea {
 
 #row_detail {
 	margin-top: 20px;
+}
+
+
+button {
+	padding: 0.6em 2em;
+	border: none;
+	outline: none;
+	color: rgb(255, 255, 255);
+	background: #111;
+	cursor: pointer;
+	position: relative;
+	z-index: 0;
+	border-radius: 10px;
+	user-select: none;
+	-webkit-user-select: none;
+	touch-action: manipulation;
+}
+button:before {
+	content: "";
+	background: linear-gradient(
+	45deg,
+	#ff0000,
+	#ff7300,
+	#fffb00,
+	#48ff00,
+	#00ffd5,
+	#002bff,
+	#7a00ff,
+	#ff00c8,
+	#ff0000
+	);
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	background-size: 400%;
+	z-index: -1;
+	filter: blur(5px);
+	-webkit-filter: blur(5px);
+	width: calc(100% + 4px);
+	height: calc(100% + 4px);
+	animation: glowing-button-85 20s linear infinite;
+	transition: opacity 0.3s ease-in-out;
+	border-radius: 10px;
+}
+@keyframes glowing-button-85 {
+0% {
+background-position: 0 0;
+}
+50% {
+background-position: 400% 0;
+}
+100% {
+background-position: 0 0;
+}
+}
+
+button:after {
+	z-index: -1;
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: #222;
+	left: 0;
+	top: 0;
+	border-radius: 10px;
+}
+
+button:hover {
+	opacity: 0.8;
+}
+
+/*  Progress Bar */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+*, *:before, *:after {box-sizing:border-box;}
+
+
+.range {
+  position: relative;
+  background-color: #333;
+  width: 300px;
+  height: 30px;
+  transform: skew(30deg);
+  font-family: 'Orbitron', monospace;
+
+  &:before {
+    --width: calc(var(--p) * 1%);
+
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background-color: #F3E600;
+    z-index: 0;
+    animation: load .5s forwards linear, glitch 2s infinite linear;
+  }
+
+  &:after {
+    counter-reset: progress var(--p);
+    content: counter(progress) '%';
+    color: #000;
+    position: absolute;
+    left: 5%;
+    top: 50%;
+    transform: translateY(-50%) skewX(-30deg);
+    z-index: 1;
+  }
+
+  &__label {
+    transform: skew(-30deg) translateY(-100%);
+    line-height: 1.5;
+  }
+}
+
+@keyframes load {
+  to {
+    width: var(--width);
+  }
+}
+
+@keyframes glitch {
+  0%, 5% {
+    transform: translate(0, 0);
+  }
+  1% {
+    transform: translate(-5%, -10%);
+  }
+  2% {
+    transform: translate(10%, 30%);
+  }
+  3%{
+    transform: translate(-43%, 10%);
+  }
+  4% {
+    transform: translate(2%, -23%);
+  }
 }

@@ -1,11 +1,12 @@
-var URL = 'http://127.0.0.1:8000'
-var URL_STATUS = 'http://127.0.0.1:8000/api/status/'
+var URL = 'http://localhost:8000'
+var URL_STATUS = 'http://localhost:8000/api/status/'
 var results = []
 var status_list = []
 var res = ''
 jQuery(document).ready(function () {
     $('#row_detail').hide()
     $("#row_results").hide();
+    $('#progress-bar').hide();
 
     $('#btn-process').on('click', function () {
         var form_data = new FormData();
@@ -27,6 +28,11 @@ jQuery(document).ready(function () {
                 $("#table_result > tbody").html('');
                 $('#row_detail').hide();
                 $("#row_results").hide();
+
+                // Show progress bar and label
+                $('#progress-bar').css('--p', '0');
+                $('#progress-bar').show();
+                $('#progress-label').text('Processing...');
             },
         }).done(function (jsondata, textStatus, jqXHR) {
             for (i = 0; i < jsondata.length; i++) {
@@ -76,7 +82,7 @@ jQuery(document).ready(function () {
         $.ajax({
             url: URL + '/api/get_similarity',
             type: "post",
-            data: JSON.stringify({ images: ["./images/5.jpg", "./images/6.jpg","./images/7.jpg","./images/8.jpg","./images/9.jpg"], prompt: prompt }),
+            data: JSON.stringify({ images: ["./api/images/0.jpg", "./api/images/1.jpg","./api/images/2.jpg","./api/images/3.jpg","./api/images/4.jpg"], prompt: prompt }),
             contentType: 'application/json',
             beforeSend: function () {
                 results = []
@@ -84,13 +90,12 @@ jQuery(document).ready(function () {
                 $("#table_result > tbody").html('');
                 $('#row_detail').hide();
                 $("#row_results").hide();
+
             },
             success: function (jsondata, textStatus, jqXHR) {
-                // Handle success
                 console.log(jsondata);
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                // Handle error
                 console.log(jqXHR);
             },
         }).done(function (jsondata, textStatus, jqXHR) {
@@ -99,13 +104,13 @@ jQuery(document).ready(function () {
                 status = jsondata[i]['status']
                 results.push(URL + jsondata[i]['url_result'])
                 status_list.push(task_id)
-                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view" data=${i}>View</a>`
+                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-caption" data=${i}>View</a>`
                 $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
                 $("#row_results").show();
             }
 
             var interval = setInterval(refresh, 1000);
-
+            var fake_progress = 0
             function refresh() {
                 n_success = 0
                 for (i = 0; i < status_list.length; i++) {
@@ -119,11 +124,22 @@ jQuery(document).ready(function () {
                                 $($('#' + id).siblings()[1]).children().show()
                                 n_success++
                             }
+
+                            // Show progress bar and label
+                            console.log("fake_progress",fake_progress)
+                            $('#progress-bar').css('--p', fake_progress);
+                            $('#progress-bar').show();
+                            $('#progress-label').text('Processing...');
+                            if (fake_progress < 100) {
+                                fake_progress += Math.floor(Math.random() * 10) + 1;
+                            }
+
                         },
                         async: false
                     });
                 }
                 if (n_success == status_list.length) {
+                    $('#progress-bar').hide();
                     clearInterval(interval);
                 }
             }
@@ -142,6 +158,24 @@ jQuery(document).ready(function () {
                 $('#result_txt').val(JSON.stringify(res.result['bbox'], undefined, 4))
                 $('#result_img').attr('src', URL + '/' + res.result.file_name)
                 $('#result_link').attr('href', URL + '/' + res.result.file_name)
+            } else {
+                alert('Result not ready or already consumed!')
+                $('#row_detail').hide()
+            }
+        });
+    })
+
+    $(document).on('click', '#btn-view-caption', function (e) {
+        id = $(e.target).attr('data')
+        $.get(results[id], function (data) {
+            res = data
+            if (data['status'] == 'SUCCESS') {
+                for (var i = 0; i < res.result.length; i++) {
+                    $('#row_detail').show()
+                    $('#result_txt').val(JSON.stringify(res.result[i], undefined, 4))
+                    $('#result_img').attr('src', `${URL}/img/${i}.jpg`)
+                    $('#result_link').attr('href', `${URL}/img/${i}.jpg`)
+                }
             } else {
                 alert('Result not ready or already consumed!')
                 $('#row_detail').hide()

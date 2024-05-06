@@ -36,10 +36,13 @@ async def get_similarity(request: Request):
     try:
         d = {}
         data = await request.json()
+        # Need Data Validation (data models)
         task_id = get_sim.delay(data)
         d["task_id"] = str(task_id)
+        d["task_name"] = get_similarity.__name__
         d["status"] = "PROCESSING"
         d["url_result"] = f"/api/result/{task_id}"
+        d["requested_data"] = data
         tasks.append(d)
         return JSONResponse(status_code=202, content=tasks)
     except Exception as err:
@@ -56,6 +59,7 @@ async def process(files: List[UploadFile] = File(...)):
         for file in files:
             d = {}
             try:
+                # Save Uploaded File
                 name = str(uuid.uuid4()).split("-")[0]
                 ext = file.filename.split(".")[-1]
                 file_name = f"{UPLOAD_FOLDER}/{name}.{ext}"
@@ -66,6 +70,7 @@ async def process(files: List[UploadFile] = File(...)):
                 # start task prediction
                 task_id = predict_image.delay(os.path.join("api", file_name))
                 d["task_id"] = str(task_id)
+                d["task_name"] = process.__name__
                 d["status"] = "PROCESSING"
                 d["url_result"] = f"/api/result/{task_id}"
             except Exception as ex:
