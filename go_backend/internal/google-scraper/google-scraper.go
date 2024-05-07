@@ -77,7 +77,7 @@ func httpGet(request_url string) (*http.Response, error) {
 	return response, err
 }
 
-func downloadImage(image *Image, index int) (*string, error) {
+func downloadImage(query string, image *Image, index int) (*string, error) {
 	// Get the data from the URL
 	url := image.ImagePath
 
@@ -100,12 +100,12 @@ func downloadImage(image *Image, index int) (*string, error) {
 	}
 
 	// Create the "images" directory if it doesn't exist
-	err = os.MkdirAll("images", os.ModePerm)
+	err = os.MkdirAll("images/"+query, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the file
+	// Create the file and extension
 	filenameParts := strings.Split(url, "?")
 	ext := filepath.Ext(filenameParts[0])
 	if ext == "" || strings.HasSuffix(ext, "cms") || strings.HasSuffix(ext, "- ") {
@@ -113,7 +113,7 @@ func downloadImage(image *Image, index int) (*string, error) {
 	}
 
 	cwd, _ := os.Getwd()
-	filepath := cwd + "/" + fmt.Sprintf("images/%d%s", index, ext)
+	filepath := cwd + "/" + fmt.Sprintf("images/%s/%d%s", query, index, ext)
 	file, err := os.Create(filepath)
 	if err != nil {
 		return nil, err
@@ -130,11 +130,11 @@ func downloadImage(image *Image, index int) (*string, error) {
 	return &filepath, nil
 }
 
-func DownloadImages(images []*Image) ([]*Image, error) {
+func DownloadImages(query string, images []*Image) ([]*Image, error) {
 	//returns a list of updated Images with updated path to downloaded file
 	updated_images := make([]*Image, 0)
 	for index, image := range images {
-		result, err := downloadImage(image, index)
+		result, err := downloadImage(query, image, index)
 		if err != nil || result == nil {
 			log.Println(err, " Occurred while downloading ", image.ImagePath)
 			continue

@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -178,7 +179,20 @@ func filterImages(images []*googlescraper.Image, q_keyword string) ([]imageScore
 	})
 	return image_scores, nil
 }
+func sanitizeQueryString(query string) string {
+	query = strings.TrimSpace(query)
+	query = strings.ReplaceAll(query, " ", "_")
 
+	illegalChars := []string{`\`, `/`, `:`, `*`, `?`, `"`, `<`, `>`, `|`}
+	for _, char := range illegalChars {
+		query = strings.ReplaceAll(query, char, "_")
+	}
+	if len(query) > 255 {
+		query = query[:255]
+	}
+
+	return query
+}
 func GetImages(c *gin.Context) {
 	/*
 	   request format in params:
@@ -223,7 +237,7 @@ func GetImages(c *gin.Context) {
 		c.Abort()
 	}
 
-	images, e := googlescraper.DownloadImages(images[:10])
+	images, e := googlescraper.DownloadImages(sanitizeQueryString(query), images[:10])
 	if e != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"Error: ": "Error while downloading image from google",
@@ -239,7 +253,7 @@ func GetImages(c *gin.Context) {
 		c.Abort()
 	}
 
-	log.Println("Image scores are: ", image_scores)
+	log.Println("[", query, "] Image scores are: ", image_scores)
 
 	c.JSON(http.StatusOK, gin.H{
 		"image_scores": image_scores,
