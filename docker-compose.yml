@@ -15,22 +15,24 @@ services:
   worker:
     container_name: worker
     build:
-      dockerfile: api/Dockerfile
       context: .
-    image: alex_worker
-    command: sh -c "cd api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd ../ & celery -A celery_tasks.app_worker worker -l INFO --pool=solo"
+      dockerfile: VLNML/api/Dockerfile
+    image: worker
     volumes:
       - .:/app
+    command: sh -c "cd VLNML && celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 10 & cd VLNML/api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd go_backend && go run cmd/main/main.go"
     ports:
       - "8000:8000"
+      - "9888:9888"
 
   webapp:
     container_name: webapp
     build:
       dockerfile: webapp/Dockerfile
       context: .
-    command: sh -c "cd /app && uvicorn app:app --host 0.0.0.0 --port 4567 --reload"
+    image: webapp
     volumes:
     - ./webapp:/app
+    command: sh -c "cd /app && uvicorn app:app --host 0.0.0.0 --port 4567 --reload"
     ports:
       - "4567:4567"

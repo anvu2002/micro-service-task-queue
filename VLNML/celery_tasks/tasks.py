@@ -61,13 +61,17 @@ class SimilarityTask(Task):
 def predict_image(self, data):
     try:
         data_pred = self.model.predict(data)
-        # used to display once this celery task is done
-        return {"task": "predict_image", "status": "SUCCESS", "result": data_pred}
+        # used to display log once this celery task is done
+        return {"task_name": "predict_image", "status": "SUCCESS", "result": data_pred}
     except Exception as ex:
         try:
             self.retry(countdown=2)
         except MaxRetriesExceededError as ex:
-            return {"status": "FAIL", "result": "max retried achieved"}
+            return {
+                "task_name": "predict_image",
+                "status": "FAIL",
+                "result": "max retried achieved",
+            }
 
 
 @app.task(ignore_result=False, bind=True, base=SimilarityTask)
@@ -88,11 +92,14 @@ def get_sim(self, data):
             raise CeleryTasksException(
                 task_name=get_sim.__name__, err_str="EMPTY similarity result"
             )
-        logger.debug(f"results = {similairty_results}")
 
-        return {"task": "get_sim", "status": "SUCCESS", "result": similairty_results}
+        return {
+            "task_name": "get_sim",
+            "status": "SUCCESS",
+            "result": similairty_results,
+        }
     except (CeleryTasksException, Exception) as e:
-        return {"task": "get_sim", "status": "FAIL", "error": str(e)}
+        return {"task_name": "get_sim", "status": "FAIL", "error": str(e)}
 
 
 # endregion

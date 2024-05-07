@@ -22,7 +22,7 @@ if not isdir:
 router = APIRouter(prefix="/api", tags=["api"])
 
 
-@router.post("/get_similarity")
+@router.post("/process_similarity")
 async def get_similarity(request: Request):
     """
     Usage: Image selection through similarity against prompt keywords
@@ -105,11 +105,12 @@ async def result(task_id: str):
     result = task_result.get("result")
     return JSONResponse(
         status_code=200,
-        content={
-            "task_id": str(task_id),
-            "status": task_result.get("status"),
-            "result": result,
-        },
+        # content={
+        #     "task_id": str(task_id),
+        #     "status": task_result.get("status"),
+        #     "result": result,
+        # },
+        content=result,
     )
 
 
