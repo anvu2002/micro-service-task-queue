@@ -78,12 +78,8 @@ func getSimScores(images []*googlescraper.Image, q_keyword string) ([]similarity
 
 	// Process VLNML Response (api return a list of submitted taskS metadata)
 	var vlnml_res []VLNMLResponse
-	// if err := json.Unmarshal([]byte(string(resp_body)), &vlnml_res); err != nil {
-	// 	log.Println("ERROR when trying to map inital VLNML response", err)
-	// 	return nil, err
-	// }
-	vlnml_format_err := json.Unmarshal([]byte(string(resp_body)), &vlnml_res)
-	if vlnml_format_err != nil {
+	vlnml_resp_format_err := json.Unmarshal([]byte(string(resp_body)), &vlnml_res)
+	if vlnml_resp_format_err != nil {
 		log.Println("ERROR when trying to map inital VLNML response", err)
 		return nil, err
 	}
@@ -115,7 +111,6 @@ func getSimScores(images []*googlescraper.Image, q_keyword string) ([]similarity
 			}
 
 			if statusResponse.Status == "SUCCESS" {
-				log.Println("Retrieving RESULTS.............")
 				result_api := config.GetMLService() + "/api/result/" + task_id
 				resultResp, err := http.Get(result_api)
 				if err != nil {
@@ -127,12 +122,10 @@ func getSimScores(images []*googlescraper.Image, q_keyword string) ([]similarity
 
 				var similarity_scores []similarityResponse
 
-				log.Println("MAPPING SIMILAIRTY SCORE")
 				json_format_err := json.Unmarshal([]byte(string(resultBody)), &similarity_scores)
 				if json_format_err != nil {
 					return nil, err
 				}
-				log.Println("HERE!!!! simlarity_scores = ", similarity_scores)
 				return similarity_scores, nil
 			}
 
