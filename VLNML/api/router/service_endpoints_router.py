@@ -93,11 +93,12 @@ async def result(task_id: str):
     if not task.ready():
         return JSONResponse(
             status_code=202,
-            content={
-                "task_id": str(task_id),
-                "status": task.status,
-                "result": "[PENDING...]",
-            },
+            # content={
+            #     "task_id": str(task_id),
+            #     "status": task.status,
+            #     "result": "[PENDING...]",
+            # },
+            content=None,
         )
 
     # Task done: return the value

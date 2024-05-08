@@ -80,7 +80,7 @@ def get_sim(self, data):
     try:
         image_urls, prompt_text = data.get("images"), data.get("prompt")
         logger.info(f"Processing similarity on keyword: {prompt_text}\n")
-        logger.debug(f"image_urls = {image_urls}")
+        # logger.debug(f"image_urls = {image_urls}")
 
         if not image_urls:
             raise CeleryTasksException(

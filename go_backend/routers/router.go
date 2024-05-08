@@ -14,5 +14,6 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 	r.POST("/tts", inference.TextToSpeech)
 	r.POST("/get_images", scraper.GetImages)
+	// r.GET("/status")
 	return r
 }
