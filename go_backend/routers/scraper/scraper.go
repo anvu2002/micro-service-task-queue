@@ -240,7 +240,8 @@ func GetImages(c *gin.Context) {
 	images, e := googlescraper.DownloadImages(sanitizeQueryString(query), images[:10])
 	if e != nil {
 		c.JSON(http.StatusForbidden, gin.H{
-			"Error: ": "Error while downloading image from google",
+			"Status: ": "Error while downloading image from google",
+			"Error: ":  e,
 		})
 		c.Abort()
 	}
@@ -248,7 +249,8 @@ func GetImages(c *gin.Context) {
 	image_scores, err := filterImages(images, query)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
-			"Error: ": "Error while filtering downloaded images",
+			"Status: ": "Error while filtering downloaded images",
+			"Error":    err,
 		})
 		c.Abort()
 	}
