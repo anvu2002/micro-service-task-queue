@@ -8,42 +8,68 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var (
-	imageList []int
-
-	mutex sync.RWMutex
+	taskMap = make(map[string][]int)
+	mutex   sync.RWMutex
 )
 
-func generateImageList() {
+func generateImageList() []int {
+	// Simulate long processing time to generate the image list
 	time.Sleep(10 * time.Second)
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	imageList = []int{1, 2, 3}
+	// Generate the image list
+	return []int{1, 2, 3} // Replace this with your actual implementation
 }
 
 func StartTask(c *gin.Context) {
-	go func() {
-		generateImageList()
+	// Generate a unique task ID
+	taskID := uuid.New().String()
 
+	// Start processing the task (simulate long processing time)
+	go func() {
+		imageList := generateImageList()
+
+		// Update task status with the generated image list
+		mutex.Lock()
+		defer mutex.Unlock()
+		taskMap[taskID] = imageList
 	}()
+
+	// Return a success response along with the task ID
 	c.JSON(http.StatusOK, gin.H{
+		"task_id": taskID,
 		"message": "Task processing started",
 	})
 }
 
 func GetTaskStatus(c *gin.Context) {
+	// Retrieve the task ID from the request query parameters
+	taskID := c.Query("task_id")
+
 	mutex.RLock()
 	defer mutex.RUnlock()
-	status := imageList
 
-	c.JSON(http.StatusOK, gin.H{
-		"imageList": status,
-	})
+	// Check if the task ID exists in the taskMap
+	if imageList, ok := taskMap[taskID]; ok {
+		// Task ID found, return task status with the generated image list
+		c.JSON(http.StatusOK, gin.H{
+			"task_id":   taskID,
+			"status":    "COMPLETED",
+			"imageList": imageList,
+		})
+	} else {
+		// Task ID not found, return status as "PENDING"
+		c.JSON(http.StatusOK, gin.H{
+			"task_id": taskID,
+			"status":  "PENDING",
+		})
+	}
 }
 
+// EXPERIMENTING
 type imageScore struct {
 	SimilarityScore float64 `json:"similarity_score"`
 	QualityScore    float64 `json:"quality_score"`
