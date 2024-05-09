@@ -17,18 +17,14 @@ var (
 )
 
 func generateImageList() []int {
-	// Simulate long processing time to generate the image list
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
-	// Generate the image list
-	return []int{1, 2, 3} // Replace this with your actual implementation
+	return []int{1, 2, 3}
 }
 
 func StartTask(c *gin.Context) {
-	// Generate a unique task ID
 	taskID := uuid.New().String()
 
-	// Start processing the task (simulate long processing time)
 	go func() {
 		imageList := generateImageList()
 
@@ -38,7 +34,6 @@ func StartTask(c *gin.Context) {
 		taskMap[taskID] = imageList
 	}()
 
-	// Return a success response along with the task ID
 	c.JSON(http.StatusOK, gin.H{
 		"task_id": taskID,
 		"message": "Task processing started",
@@ -46,7 +41,7 @@ func StartTask(c *gin.Context) {
 }
 
 func GetTaskStatus(c *gin.Context) {
-	// Retrieve the task ID from the request query parameters
+	// get taskID from query param
 	taskID := c.Query("task_id")
 
 	mutex.RLock()
@@ -55,6 +50,7 @@ func GetTaskStatus(c *gin.Context) {
 	// Check if the task ID exists in the taskMap
 	if imageList, ok := taskMap[taskID]; ok {
 		// Task ID found, return task status with the generated image list
+		log.Printf("COMPLETE task_id = %s", taskID)
 		c.JSON(http.StatusOK, gin.H{
 			"task_id":   taskID,
 			"status":    "COMPLETED",
