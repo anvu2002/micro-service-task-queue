@@ -1,3 +1,6 @@
+"""
+VLNML API Endpoints -- 8000
+"""
 import os
 import sys
 
@@ -37,6 +40,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
+    # sources are allow to access
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],

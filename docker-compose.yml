@@ -33,6 +33,6 @@ services:
     image: webapp
     volumes:
     - ./webapp:/app
-    command: sh -c "cd /app && uvicorn app:app --host 0.0.0.0 --port 4567 --reload"
+    command: sh -c "cd /app && uvicorn web_app:app --host 0.0.0.0 --port 4567 --reload"
     ports:
       - "4567:4567"

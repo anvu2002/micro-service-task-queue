@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type similarityRequest struct {
@@ -43,6 +45,11 @@ type imageScore struct {
 	QualityScore    float64 `json:"quality_score"`
 	ImagePath       string  `json:"image_path"`
 }
+
+var (
+	taskMap = make(map[string][]imageScore)
+	mutex   sync.RWMutex
+)
 
 func getSimScores(images []*googlescraper.Image, q_keyword string) ([]similarityResponse, error) {
 	/*
@@ -179,6 +186,7 @@ func filterImages(images []*googlescraper.Image, q_keyword string) ([]imageScore
 	})
 	return image_scores, nil
 }
+
 func sanitizeQueryString(query string) string {
 	query = strings.TrimSpace(query)
 	query = strings.ReplaceAll(query, " ", "_")
@@ -193,6 +201,7 @@ func sanitizeQueryString(query string) string {
 
 	return query
 }
+
 func GetImages(c *gin.Context) {
 	/*
 	   request format in params:
@@ -220,45 +229,90 @@ func GetImages(c *gin.Context) {
 	// 	return
 	// }
 	/////////////////////////////////////////////////////
-	query, key := c.GetQuery("query")
-	if !key {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"Error: ": "Invalid request parameter for getting image",
-		})
-		c.Abort()
-	}
-	log.Println("Requested data: ", query)
+	taskID := uuid.New().String()
+	go func() {
 
-	images, err := googlescraper.ImageSearch(query)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"Error: ": "Error while getting image from google",
-		})
-		c.Abort()
-	}
+		query, key := c.GetQuery("query")
+		if !key {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Error: ": "Invalid request parameter ",
+				"State: ": "Getting images",
+			})
+			c.Abort()
+		}
 
-	images, e := googlescraper.DownloadImages(sanitizeQueryString(query), images[:10])
-	if e != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"Status: ": "Error while downloading image from google",
-			"Error: ":  e,
-		})
-		c.Abort()
-	}
+		log.Println("Requested keyword: ", query)
 
-	image_scores, err := filterImages(images, query)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"Status: ": "Error while filtering downloaded images",
-			"Error":    err,
-		})
-		c.Abort()
-	}
+		images, err := googlescraper.ImageSearch(query)
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"Error: ": "Error while getting image from google",
+			})
+			c.Abort()
+		}
 
-	log.Println("[", query, "] Image scores are: ", image_scores)
+		images, e := googlescraper.DownloadImages(sanitizeQueryString(query), images[:10])
+		if e != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"Status: ": "Error while downloading image from google",
+				"Error: ":  e,
+			})
+			c.Abort()
+		}
+
+		image_scores, err := filterImages(images, query)
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"Status: ": "Error while filtering downloaded images",
+				"Error":    err,
+			})
+			c.Abort()
+		}
+
+		log.Println("[", query, "] Image scores are: ", image_scores)
+
+		// Update task status with the generated image list
+		mutex.Lock()
+		defer mutex.Unlock()
+		taskMap[taskID] = image_scores
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
-		"image_scores": image_scores,
-		"status":       http.StatusOK,
+		"task_id": taskID,
+		"service": "get_images",
+		"status":  "PROCESSING",
 	})
+
+}
+
+func GetTaskStatus(c *gin.Context) {
+	// get taskID from query param
+	taskID, key := c.GetQuery("task_id")
+	log.Println("Requested task_id = ", taskID)
+	log.Println("taskMap = ", taskMap)
+	if !key {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error: ": "Invalid request parameter",
+			"State: ": "Retrieve task status",
+		})
+		c.Abort()
+	}
+
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	if image_scores, ok := taskMap[taskID]; ok {
+		log.Printf("COMPLETED task_id = %s", taskID)
+		c.JSON(http.StatusOK, gin.H{
+			"task_id":      taskID,
+			"status":       "SUCCESS",
+			"image_scores": image_scores,
+		})
+
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"task_id": taskID,
+			"status":  "PENDING",
+		})
+	}
 }

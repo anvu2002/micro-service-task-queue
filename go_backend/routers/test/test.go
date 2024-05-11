@@ -16,7 +16,7 @@ var (
 	mutex   sync.RWMutex
 )
 
-func generateImageList() []int {
+func generateimage_scores() []int {
 	time.Sleep(30 * time.Second)
 
 	return []int{1, 2, 3}
@@ -26,12 +26,12 @@ func StartTask(c *gin.Context) {
 	taskID := uuid.New().String()
 
 	go func() {
-		imageList := generateImageList()
+		image_scores := generateimage_scores()
 
 		// Update task status with the generated image list
 		mutex.Lock()
 		defer mutex.Unlock()
-		taskMap[taskID] = imageList
+		taskMap[taskID] = image_scores
 	}()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -43,18 +43,21 @@ func StartTask(c *gin.Context) {
 func GetTaskStatus(c *gin.Context) {
 	// get taskID from query param
 	taskID := c.Query("task_id")
+	log.Println("Requested task_id = ", taskID)
+	log.Println("taskMap = ", taskMap)
 
 	mutex.RLock()
 	defer mutex.RUnlock()
 
 	// Check if the task ID exists in the taskMap
-	if imageList, ok := taskMap[taskID]; ok {
+	if image_scores, ok := taskMap[taskID]; ok {
+
 		// Task ID found, return task status with the generated image list
 		log.Printf("COMPLETE task_id = %s", taskID)
 		c.JSON(http.StatusOK, gin.H{
-			"task_id":   taskID,
-			"status":    "COMPLETED",
-			"imageList": imageList,
+			"task_id":      taskID,
+			"status":       "COMPLETED",
+			"image_scores": image_scores,
 		})
 	} else {
 		// Task ID not found, return status as "PENDING"

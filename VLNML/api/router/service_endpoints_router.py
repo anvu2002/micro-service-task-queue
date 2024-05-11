@@ -52,7 +52,7 @@ async def get_similarity(request: Request):
         )
 
 
-@router.post("/process")
+@router.post("/process_detection")
 async def process(files: List[UploadFile] = File(...)):
     tasks = []
     try:

@@ -1,8 +1,10 @@
 // var URL = 'http://localhost:8000'  -- VLNML API endpoints
-var URL = 'http://localhost:9888'
+var URL_GO = 'http://localhost:9888'
+var URL_GO_STATUS = 'localhost:9888/status?task_id='
+
 var URL_VLNML = 'http://localhost:8000'
 
-var URL_STATUS = 'http://localhost:8000/api/status/'
+var URL_VLNML_STATUS = 'http://localhost:8000/api/status/'
 var results = []
 var status_list = []
 var res = ''
@@ -11,14 +13,16 @@ jQuery(document).ready(function () {
     $("#row_results").hide();
     $('#progress-bar').hide();
 
+    // Index Buttons
     $('#btn-detect').on('click', function () {
+        // Phase 1: Request ML Service
         var form_data = new FormData();
         files = $('#input_file').prop('files')
         for (i = 0; i < files.length; i++)
             form_data.append('files', $('#input_file').prop('files')[i]);
 
         $.ajax({
-            url: URL_VLNML + '/api/process',
+            url: URL_VLNML + '/api/process_detection',
             type: "post",
             data: form_data,
             enctype: 'multipart/form-data',
@@ -33,7 +37,20 @@ jQuery(document).ready(function () {
                 $("#row_results").hide();
 
             },
+            success: function(jsondata, textStatus, jqXHR) {
+                console.log("[SUCCEED] Requested Detect Objects!");
+                console.log("JSON DATA = ",jsondata);
+                console.log("JSON DATA LEN =", jsondata.length)
+                console.log("jqXHR status",jqXHR.status)
+            },
+            error: function(jqXHR, textStatus, errorThrown){
+                console.log("[FAILED] Request Detect Objects.");
+                console.log("jqXHR = ",jqXHR)
+            }
         }).done(function (jsondata, textStatus, jqXHR) {
+            console.log("[SUCCEED] Requested Detect Objects!");
+            console.log("jqXHR status",jqXHR.status);
+            // jsondata.length == number of submmited pictures (tasks)
             for (i = 0; i < jsondata.length; i++) {
                 task_id = jsondata[i]['task_id']
                 status = jsondata[i]['status']
@@ -44,28 +61,39 @@ jQuery(document).ready(function () {
                 $("#row_results").show();
             }
 
+            // Phase 2: Probe requested ML Service status
             var interval = setInterval(refresh, 1000);
+            var fake_progress = 0;
 
-            var fake_progress = 0
             function refresh() {
                 n_success = 0
                 for (i = 0; i < status_list.length; i++) {
+                    // Loop through each task
                     $.ajax({
-                        url: URL_STATUS + status_list[i],
-                        success: function (data) {
+                        url: URL_VLNML_STATUS + status_list[i],
+                        success: function (data,textStatus,jqXHR) {
                             id = status_list[i]
                             status = data['status']
+                            console.log("[+] Task ",i," -- ",id)
+                            console.log("[+] status = ", status)
+                            console.log("[+] data = ", data)
+                            console.log("[+] jqXHR = ", jqXHR)
                             $('#' + id).html(status)
                             if ((status == 'SUCCESS') || (status == 'FAILED')) {
+                                // show View Button for each Completed Task
+                                console.log("[+] show View Button")
+                                console.log("[+] jqXHR = ", jqXHR)
+                                console.log("[+]  $($('#' + id) = ", $($('#' + id)))
+                                console.log("[+]  $($('#' + id).siblings()[1]) = ", $($('#' + id)).siblings()[1])
+                                console.log("[+]  $($('#' + id).siblings()[1]).children() = ", $($('#' + id).siblings()[1]).children())
                                 $($('#' + id).siblings()[1]).children().show()
                                 n_success++
                             }
 
-                            // Show progress bar and label
+                            // Show progress bar
                             console.log("fake_progress",fake_progress)
                             $('#progress-bar').css('--p', fake_progress);
                             $('#progress-bar').show();
-                            $('#progress-label').text('Processing...');
                             if (fake_progress < 100) {
                                 fake_progress += Math.floor(Math.random() * 10) + 1;
                             }
@@ -74,6 +102,7 @@ jQuery(document).ready(function () {
                     });
                 }
                 if (n_success == status_list.length) {
+                    // Complete prob status for ALL tasks
                     $('#progress-bar').hide();
                     clearInterval(interval);
                 }
@@ -83,88 +112,15 @@ jQuery(document).ready(function () {
             $("#row_results").hide();
         });
 
-    })
-
-    $('#btn-caption').on('click', function () {
-        var prompt = $('#input_prompt').val();
-
-        console.log(prompt)
-        $.ajax({
-            url: URL + '/api/get_similarity',
-            type: "post",
-            data: JSON.stringify({ images: ["./api/images/0.jpg", "./api/images/1.jpg","./api/images/2.jpg","./api/images/3.jpg","./api/images/4.jpg"], prompt: prompt }),
-            contentType: 'application/json',
-            beforeSend: function () {
-                results = []
-                status_list = []
-                $("#table_result > tbody").html('');
-                $('#row_detail').hide();
-                $("#row_results").hide();
-
-            },
-            success: function (jsondata, textStatus, jqXHR) {
-                console.log(jsondata);
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
-            },
-        }).done(function (jsondata, textStatus, jqXHR) {
-            for (i = 0; i < jsondata.length; i++) {
-                task_id = jsondata[i]['task_id']
-                status = jsondata[i]['status']
-                results.push(URL + jsondata[i]['url_result'])
-                status_list.push(task_id)
-                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-caption" data=${i}>View</a>`
-                $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
-                $("#row_results").show();
-            }
-
-            var interval = setInterval(refresh, 1000);
-            var fake_progress = 0
-            function refresh() {
-                n_success = 0
-                for (i = 0; i < status_list.length; i++) {
-                    $.ajax({
-                        url: URL_STATUS + status_list[i],
-                        success: function (data) {
-                            id = status_list[i]
-                            status = data['status']
-                            $('#' + id).html(status)
-                            if ((status == 'SUCCESS') || (status == 'FAILED')) {
-                                $($('#' + id).siblings()[1]).children().show()
-                                n_success++
-                            }
-
-                            // Show progress bar and label
-                            console.log("fake_progress",fake_progress)
-                            $('#progress-bar').css('--p', fake_progress);
-                            $('#progress-bar').show();
-                            $('#progress-label').text('Processing...');
-                            if (fake_progress < 100) {
-                                fake_progress += Math.floor(Math.random() * 10) + 1;
-                            }
-
-                        },
-                        async: false
-                    });
-                }
-                if (n_success == status_list.length) {
-                    $('#progress-bar').hide();
-                    clearInterval(interval);
-                }
-            }
-        }).fail(function (jsondata, textStatus, jqXHR) {
-            console.log(jsondata)
-            $("#row_results").hide();
-        });
     })
 
     $('#btn-get-images').on('click', function () {
+        // Phase 1: Request Go Service
         var prompt = $('#keyword_prompt').val();
         var query = encodeURIComponent(prompt);
 
         $.ajax({
-            url: URL + '/get_images?query=' + query,
+            url: URL_GO + '/get_images?query=' + query,
             type: "post",
             beforeSend: function () {
                 results = []
@@ -172,24 +128,21 @@ jQuery(document).ready(function () {
                 $("#table_result > tbody").html('');
                 $('#row_detail').hide();
                 $("#row_results").hide();
-
-            },
-            success: function (jsondata, textStatus, jqXHR) {
-                console.log(jsondata);
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
+            console.log("Requested ML Service")
             },
         }).done(function (jsondata, textStatus, jqXHR) {
+            console.log("Resp (/get_images) = ", jsondata)
             for (i = 0; i < jsondata.length; i++) {
-                task_id = jsondata[i]['task_id']
-                status = jsondata[i]['status']
-                results.push(URL + jsondata[i]['url_result'])
+                task_id = jsondata['task_id']
+                status = jsondata['status']
+                // results.push(URL_GO + jsondata[i]['url_result'])
                 status_list.push(task_id)
-                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-caption" data=${i}>View</a>`
+                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-get-images" data=${i}>View</a>`
                 $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
                 $("#row_results").show();
             }
+
+            // Phase 2: Probe requested Go Service status
 
             var interval = setInterval(refresh, 1000);
             var fake_progress = 0
@@ -197,8 +150,10 @@ jQuery(document).ready(function () {
                 n_success = 0
                 for (i = 0; i < status_list.length; i++) {
                     $.ajax({
-                        url: URL_STATUS + status_list[i],
+                        url: URL_GO_STATUS + status_list[i],
                         success: function (data) {
+                            console.log("SUCCEED query get_image Status on GO")
+                            console.log("data = ",data)
                             id = status_list[i]
                             status = data['status']
                             $('#' + id).html(status)
@@ -211,7 +166,6 @@ jQuery(document).ready(function () {
                             console.log("fake_progress",fake_progress)
                             $('#progress-bar').css('--p', fake_progress);
                             $('#progress-bar').show();
-                            $('#progress-label').text('Processing...');
                             if (fake_progress < 100) {
                                 fake_progress += Math.floor(Math.random() * 10) + 1;
                             }
@@ -232,9 +186,128 @@ jQuery(document).ready(function () {
         });
     })
 
+    $('#btn-get-health').on('click', function () {
+       // Phase 1: Request Go Service
+       $.ajax({
+           url: URL_GO + '/health?msg=ping',
+           type: "post",
+           beforeSend: function () {
+               results = []
+               status_list = []
+               $("#table_result > tbody").html('');
+               $('#row_detail').hide();
+               $("#row_results").hide();
+           console.log("Checking Go Health")
+           },
+           success: function (jsondata, textStatus, jqXHR) {
+               console.log("GO Response = ", jsondata);
+               console.log('jqXHR = ', jqXHR);
+           },
+           error: function (jqXHR, textStatus, errorThrown) {
+               console.log("Failed Requesting service at Go, probaly Go Dead")
+               console.log(jqXHR);
+               console.log("error = ", errorThrown)
+           },
+       })
+    })
+
+    $('#btn-test').on('click', function () {
+        // Phase 1: Request Go Service
+        $.ajax({
+            url: URL_GO + '/test?query=hi&task_id=',
+            type: "post",
+            beforeSend: function () {
+                results = []
+                status_list = []
+                $("#table_result > tbody").html('');
+                $('#row_detail').hide();
+                $("#row_results").hide();
+            console.log("Checking Go Health")
+            },
+            success: function (jsondata, textStatus, jqXHR) {
+                console.log("GO Response = ", jsondata);
+                console.log('jqXHR = ', jqXHR);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log("Failed Requesting service at Go, probaly Go Dead")
+                console.log(jqXHR);
+                console.log("error = ", errorThrown)
+            },
+        }).done(function (jsondata, textStatus, jqXHR) {
+            console.log("[SUCCEED] Requested Test endpont GO!");
+            console.log("jqXHR status",jqXHR.status);
+            // jsondata.length == number of download pictures (tasks)
+            for (i = 0; i < jsondata.length; i++) {
+                task_id = jsondata[i]['task_id']
+                status = jsondata[i]['status']
+                results.push(URL_VLNML + jsondata[i]['url_result'])
+                status_list.push(task_id)
+                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-detect" data=${i}>View</a>`
+                $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
+                $("#row_results").show();
+            }
+
+            // Phase 2: Probe requested ML Service status
+            var interval = setInterval(refresh, 1000);
+            var fake_progress = 0;
+
+            function refresh() {
+                n_success = 0
+                for (i = 0; i < status_list.length; i++) {
+                    // Loop through each task
+                    $.ajax({
+                        url: URL_VLNML_STATUS + status_list[i],
+                        success: function (data,textStatus,jqXHR) {
+                            id = status_list[i]
+                            status = data['status']
+                            console.log("[+] Task ",i," -- ",id)
+                            console.log("[+] status = ", status)
+                            console.log("[+] data = ", data)
+                            console.log("[+] jqXHR = ", jqXHR)
+                            $('#' + id).html(status)
+                            if ((status == 'SUCCESS') || (status == 'FAILED')) {
+                                // show View Button for each Completed Task
+                                console.log("[+] show View Button")
+                                console.log("[+] jqXHR = ", jqXHR)
+                                console.log("[+]  $($('#' + id) = ", $($('#' + id)))
+                                console.log("[+]  $($('#' + id).siblings()[1]) = ", $($('#' + id)).siblings()[1])
+                                console.log("[+]  $($('#' + id).siblings()[1]).children() = ", $($('#' + id).siblings()[1]).children())
+                                $($('#' + id).siblings()[1]).children().show()
+                                n_success++
+                            }
+
+                            // Show progress bar
+                            console.log("fake_progress",fake_progress)
+                            $('#progress-bar').css('--p', fake_progress);
+                            $('#progress-bar').show();
+                            if (fake_progress < 100) {
+                                fake_progress += Math.floor(Math.random() * 10) + 1;
+                            }
+                        },
+                        async: false
+                    });
+                }
+                if (n_success == status_list.length) {
+                    // Complete prob status for ALL tasks
+                    $('#progress-bar').hide();
+                    clearInterval(interval);
+                }
+            }
+        }).fail(function (jsondata, textStatus, jqXHR) {
+            console.log(jsondata)
+            $("#row_results").hide();
+        });
+     })
+    // View Buttons
     $(document).on('click', '#btn-view-detect', function (e) {
         id = $(e.target).attr('data')
+        console.log("View-Detect Button clicked")
+
+        console.log("e = ", e)
+        console.log("id = ", id)
+        console.log("results = ", results)
         $.get(results[id], function (data) {
+            console.log("data = ", data)
             if (data) {
                 $('#row_detail').show()
                 $('#result_txt').val(JSON.stringify(data['bbox'], undefined, 4))
@@ -269,7 +342,7 @@ jQuery(document).ready(function () {
     $(document).on('click', '#btn-refresh', function (e) {
         for (i = 0; i < status_list.length; i++) {
             $.ajax({
-                url: URL_STATUS + status_list[i],
+                url: URL_VLNML_STATUS + status_list[i],
                 success: function (data) {
                     id = status_list[i]
                     status = data['status']
@@ -281,5 +354,6 @@ jQuery(document).ready(function () {
             });
         }
     })
+
 
 })

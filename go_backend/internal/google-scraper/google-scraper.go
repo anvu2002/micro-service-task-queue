@@ -80,6 +80,7 @@ func httpGet(request_url string) (*http.Response, error) {
 func downloadImage(query string, image *Image, index int) (*string, error) {
 	// Get the data from the URL
 	url := image.ImagePath
+	var custom_err error
 
 	response, err := httpGet(url)
 	if err != nil {
@@ -89,14 +90,14 @@ func downloadImage(query string, image *Image, index int) (*string, error) {
 
 	// Handle Unexecpted image state response
 	if response.StatusCode != http.StatusOK {
-		log.Printf("UNEXPECTED Response Status for image %s: %s", url, response.Status)
-		return nil, err
+		custom_err = fmt.Errorf("unexpected response status = %s", response.Status)
+		return nil, custom_err
 	}
 
 	// handle SEO backlink
 	if strings.Contains(url, "seo") || strings.Contains(url, "crawler") || strings.Contains(url, "media_id") {
-		log.Printf("\nSKIPPING URL %s: Likely a backlink SEO URL", url)
-		return nil, nil
+		custom_err = fmt.Errorf("backlink SEO URL")
+		return nil, custom_err
 	}
 
 	// Create the "images" directory if it doesn't exist
@@ -126,23 +127,31 @@ func downloadImage(query string, image *Image, index int) (*string, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Downloaded image %s at %s\n", filepath, url)
+	fmt.Printf("[DOWNLOADED] %s ---- File Path = %s\n", url, filepath)
 	return &filepath, nil
 }
 
 func DownloadImages(query string, images []*Image) ([]*Image, error) {
 	//returns a list of updated Images with updated path to downloaded file
+	var custom_err error
 	updated_images := make([]*Image, 0)
 	for index, image := range images {
 		result, err := downloadImage(query, image, index)
 		if err != nil || result == nil {
-			log.Println(err, " Occurred while downloading ", image.ImagePath)
+			log.Printf("[SKIPPED] %s ---- REASON: %s", image.ImagePath, err)
+			// We do not need a ALL successfull downloaded images
 			continue
 		}
 		updated_images = append(updated_images, &Image{
 			ImagePath: *result, Height: image.Height, Width: image.Width,
 		})
 	}
+	log.Printf("Download Images = %d", len(updated_images))
+	if len(updated_images) == 0 {
+		custom_err = fmt.Errorf("did not download any images")
+		return nil, custom_err
 
-	return updated_images, nil
+	} else {
+		return updated_images, nil
+	}
 }

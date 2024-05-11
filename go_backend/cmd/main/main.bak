@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"VLN-backend/config"
@@ -8,7 +8,5 @@ import (
 func main() {
 	config.Load()
 	r := routers.InitRouter()
-
 	r.Run(":9888")
-
 }
