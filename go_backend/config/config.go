@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -21,4 +22,10 @@ func GetMLService() string {
 
 func GetSerapAPIKey() string {
 	return os.Getenv("SERPAPI_KEY")
+}
+
+func GetWeight() (float64, float64) {
+	simWeight, _ := strconv.ParseFloat(os.Getenv("SIM_WEIGHT"), 64)
+	qualityWeight, _ := strconv.ParseFloat(os.Getenv("QUALITY_WEIGHT"), 64)
+	return simWeight, qualityWeight
 }

@@ -30,12 +30,13 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
-	// Gin Services
-	r.POST("/health", health.GetHealth)
+	// Gin API Endpoints
+	r.GET("/health", health.GetHealth)
 	r.POST("/tts", inference.TextToSpeech)
 	r.POST("/get_images", scraper.GetImages)
-	r.GET("/status", scraper.GetTaskStatus)
+	r.GET("/image_status", scraper.GetImageStatus)
 
+	// Testing endpoints
 	r.POST("/test_start_task", test.StartTask)
 	r.GET("/test_status", test.GetTaskStatus)
 

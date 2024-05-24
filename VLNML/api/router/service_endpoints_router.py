@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api", tags=["api"])
 @router.post("/process_similarity")
 async def get_similarity(request: Request):
     """
-    Usage: Image selection through similarity against prompt keywords
+    Usage: Image sim scoring through their similarity against prompt keywords
     request format:
     {
         "images": ["./images/1.jpg", "https://test.com/1.jpg"],
@@ -52,6 +52,7 @@ async def get_similarity(request: Request):
         )
 
 
+# Detection Model -- For fun!
 @router.post("/process_detection")
 async def process(files: List[UploadFile] = File(...)):
     tasks = []

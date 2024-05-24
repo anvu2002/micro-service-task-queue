@@ -1,0 +1,56 @@
+﻿{
+  "image_scores": [
+    {
+      "similarity_score": 0.72984504699707,
+      "quality_score": 36864,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/0.jpg"
+    },
+    {
+      "similarity_score": 0.608567357063294,
+      "quality_score": 34483.2,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/8.jpg"
+    },
+    {
+      "similarity_score": 0.67978709936142,
+      "quality_score": 14573,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/3.jpg"
+    },
+    {
+      "similarity_score": 0.62103670835495,
+      "quality_score": 10551.6,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/2.jpg"
+    },
+    {
+      "similarity_score": 0.736743688583374,
+      "quality_score": 7800,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/1.jpg"
+    },
+    {
+      "similarity_score": 0.868651986122131,
+      "quality_score": 6400,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/5.jpg"
+    },
+    {
+      "similarity_score": 0.745228469371796,
+      "quality_score": 6993.92,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/7.jpg"
+    },
+    {
+      "similarity_score": 0.730217695236206,
+      "quality_score": 2496.96,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/4.jpg"
+    },
+    {
+      "similarity_score": 0.863566219806671,
+      "quality_score": 1440,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/6.jpg"
+    },
+    {
+      "similarity_score": 0.849283695220947,
+      "quality_score": 1089.2,
+      "image_path": "/app/go_backend/images/cute_lion_sitting_on_green_grass/9.jpg"
+    }
+  ],
+  "status": "SUCCESS",
+  "task_id": "09d42022-6330-4e30-ad48-badade1e2b67"
+}
