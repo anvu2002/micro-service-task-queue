@@ -7,7 +7,7 @@ from loguru import logger
 from openai import OpenAI
 from typing import List
 
-# from api.config.config import OPENAI_KEY
+# from config.config import OPENAI_KEY
 
 # from api.router.core_types import ImageScore
 # from api.models import ImageScore
@@ -28,8 +28,6 @@ from typing import List
 #     nltk.data.find('tokenizers/stopwords')
 # except LookupError:
 # nltk.download('stopwords')
-
-openai_client = OpenAI(api_key="testing")
 
 
 class Similarity:
@@ -96,15 +94,33 @@ class Similarity:
         return sim_results if sim_results else None
 
 
-def text_to_speech(text: str, save_path: str) -> str:
-    logger.info(f"Converting {text} to {save_path}")
+class TextToSpeech:
+    """
+    ML Service: Generate speech from text
+    Usage: supply with text ( keywords from the doc)
 
-    response = openai_client.audio.speech.create(
-        model="tts-1", voice="alloy", input=text
-    )
+    """
 
-    response.stream_to_file(save_path)
-    logger.info(f"{save_path} created!")
+    def __init__(self):
+        self.openai_client = OpenAI(api_key="")
+
+    def text_to_speech(self, text: str, save_path: str) -> None:
+        try:
+            logger.info(f"Converting {text} to {save_path}")
+
+            # response = self.openai_client.audio.speech.create(
+            #     model="tts-1", voice="alloy", input=text
+            # )
+
+            # response.stream_to_file(save_path)
+
+            #  Use GCP instead -- for now
+            import time
+
+            time.sleep(15)
+            logger.info(f"{save_path} TTS created!")
+        except Exception as e:
+            logger.error(e)
 
 
 # REMOVE STOPWORDS AND RETURN A PREPROCESSED STRING

@@ -288,6 +288,8 @@ func GetImages(c *gin.Context) {
 	// 	return
 	// }
 	/////////////////////////////////////////////////////
+
+	// Image Selection Process
 	taskID := uuid.New().String()
 
 	// goroutine <-- 1 query

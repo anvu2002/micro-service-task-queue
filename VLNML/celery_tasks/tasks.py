@@ -6,7 +6,7 @@ from celery import Task
 from celery.exceptions import MaxRetriesExceededError
 from .app_worker import app
 from .yolo import YoloModel
-from .core import Similarity
+from .core import Similarity, TextToSpeech
 from typing import List
 
 
@@ -51,6 +51,19 @@ class SimilarityTask(Task):
             logger.info("Loading Similarity Model...")
             self.model = Similarity()
             logger.info("Similarity Model loaded")
+        return self.run(*args, **kwargs)
+
+
+class TTSTask(Task):
+    def __init__(self):
+        super().__init__()
+        self.model = None
+
+    def __call__(self, *args, **kwargs):
+        if not self.model:
+            logger.info("Loading TextToSpeech Model...")
+            self.model = TextToSpeech()
+            logger.info("TextToSpeech Model loaded")
         return self.run(*args, **kwargs)
 
 
@@ -100,6 +113,25 @@ def get_sim(self, data):
         }
     except (CeleryTasksException, Exception) as e:
         return {"task_name": "get_sim", "status": "FAIL", "error": str(e)}
+
+
+@app.task(ignore_result=False, bind=True, base=TTSTask)
+def get_tts(self, data):
+    try:
+        text, save_path = data.get("text"), data.get("save_path")
+
+        logger.debug("text = ", text)
+        logger.debug("save_path = ", save_path)
+
+        self.model.text_to_speech(text, save_path)
+
+        return {
+            "task_name": "get_sim",
+            "status": "SUCCESS",
+            "result": save_path,
+        }
+    except (CeleryTasksException, Exception) as e:
+        return {"task_name": "get_tts", "status": "FAIL", "error": str(e)}
 
 
 # endregion
