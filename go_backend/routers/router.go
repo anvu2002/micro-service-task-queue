@@ -36,6 +36,9 @@ func InitRouter() *gin.Engine {
 	r.POST("/get_images", scraper.GetImages)
 	r.GET("/image_status", scraper.GetImageStatus)
 
+	r.GET("/keyword_status", scraper.GetKeywordStatus)
+	r.POST("/process_doc", scraper.ProcessDoc)
+
 	// Testing endpoints
 	r.POST("/test_start_task", test.StartTask)
 	r.GET("/test_status", test.GetTaskStatus)

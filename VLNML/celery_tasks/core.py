@@ -1,3 +1,4 @@
+# _________ Component: Images Similarity _________
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from sentence_transformers import SentenceTransformer
@@ -7,29 +8,39 @@ from loguru import logger
 from openai import OpenAI
 from typing import List
 
-# from api.config.config import OPENAI_KEY
+# Init global models, processors, and clients on server boot
+# logger.info("Loading Image Caption, Sentence Transformer....")
+# i2t_processor = BlipProcessor.from_pretrained(
+#     "Salesforce/blip-image-captioning-large"
+# )
+# i2t_model = BlipForConditionalGeneration.from_pretrained(
+#     "Salesforce/blip-image-captioning-large"
+# )
+# t2v_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+# logger.info("Finished!")
+
+
+# _________ Component: Text-to-Speech _________
+# from config.config import OPENAI_KEY
+
+# _________ Component: Keyword Extractor _________
+from sklearn.feature_extraction.text import CountVectorizer
+import nltk, string
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
+try:
+    nltk.data.find("tokenizers/stopwords")
+except LookupError:
+    nltk.download("stopwords")
 
 # from api.router.core_types import ImageScore
 # from api.models import ImageScore
-
-# For keyword extractor
-# from sklearn.feature_extraction.text import CountVectorizer
-# import pandas as pd
-# import nltk
-# from nltk.tokenize import sent_tokenize, word_tokenize
-# from nltk.corpus import stopwords
-
-# try:
-#     nltk.data.find('tokenizers/punkt')
-# except LookupError:
-#     nltk.download('punkt')
-
-# try:
-#     nltk.data.find('tokenizers/stopwords')
-# except LookupError:
-# nltk.download('stopwords')
-
-openai_client = OpenAI(api_key="testing")
 
 
 class Similarity:
@@ -96,39 +107,92 @@ class Similarity:
         return sim_results if sim_results else None
 
 
-def text_to_speech(text: str, save_path: str) -> str:
-    logger.info(f"Converting {text} to {save_path}")
+class KeyWordExtractor:
+    """
+    ML Service: Phrases (tokens) and Keywords Generator
+    Usage: Supply with a document
+    """
 
-    response = openai_client.audio.speech.create(
-        model="tts-1", voice="alloy", input=text
-    )
+    def __init__(self):
+        # Possible modules: keyBERT, vlt5
+        pass
 
-    response.stream_to_file(save_path)
-    logger.info(f"{save_path} created!")
+    def is_url(self, word):
+        """
+        Checks if a word is a URL.
+        """
+        return (
+            word.startswith("http://")
+            or word.startswith("https://")
+            or word.startswith("www.")
+        )
+
+    def filter_keywords(self, raw_text: str) -> dict[list]:
+        """
+        Filters out URLs, stopwords, and punctuation from the text, and returns the processed sentences.
+
+        Args:
+        raw_text (str): The input text to be processed.
+
+        Returns:
+        list: The original sentences and the preprocessed text.
+        """
+        # Tokenize the text into sentences
+        sentences = sent_tokenize(raw_text)
+        logger.info(f"N Sen = {len(sentences)}\n")
+
+        # Define stopwords
+        stop_words = set(stopwords.words("english"))
+        filtered_sentences = []
+
+        # Extract keywords per token / sentence
+        for sentence in sentences:
+            words = word_tokenize(sentence)
+            filtered_sentence = [
+                word for word in words if word.lower() not in stop_words
+            ]
+            filtered_sentences.append(filtered_sentence)
+
+        # Define trash characters
+        trash = list(string.punctuation) + list(string.whitespace)
+
+        # Remove unwanted characters and filter out URLs
+        preprocessed_text = [
+            " ".join(
+                "".join(char for char in word if char not in trash)
+                for word in sentence
+                if not self.is_url(word)
+            )
+            for sentence in filtered_sentences
+        ]
+
+        return sentences, preprocessed_text
 
 
-# REMOVE STOPWORDS AND RETURN A PREPROCESSED STRING
-# def filter_keywords(raw_text: str) -> str:
+class TextToSpeech:
+    """
+    ML Service: Generate speech from text
+    Usage: supply with text ( keywords from the doc)
 
-# sentences = sent_tokenize(raw_text)
+    """
 
-# stop_words = set(stopwords.words('english'))
+    def __init__(self):
+        self.openai_client = OpenAI(api_key="")
 
-# filtered_sentences = []
+    def text_to_speech(self, text: str, save_path: str) -> None:
+        try:
+            logger.info(f"Converting {text} to {save_path}")
 
-# for sentence in sentences:
-#     words = word_tokenize(sentence)
-#     filtered_sentence = [word for word in words if word.lower() not in stop_words]
-#     filtered_sentences.append(filtered_sentence)
+            # response = self.openai_client.audio.speech.create(
+            #     model="tts-1", voice="alloy", input=text
+            # )
 
-# #up until now filtered_sentences is a list of keywords
-# print(filtered_sentences)
+            # response.stream_to_file(save_path)
 
-# #join the keywords to return a single string object
-# preprocessed_text = [' '.join(sentence) for sentence in filtered_sentences]
+            #  Use GCP instead -- for now
+            import time
 
-# # print(preprocessed_text) #list
-# # for sentence in preprocessed_text:
-# #     print(sentence)
-
-# return preprocessed_text
+            time.sleep(15)
+            logger.info(f"{save_path} TTS created!")
+        except Exception as e:
+            logger.error(e)
