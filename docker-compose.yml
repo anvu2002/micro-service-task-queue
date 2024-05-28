@@ -20,7 +20,7 @@ services:
     image: worker
     volumes:
       - .:/app
-    command: sh -c "cd VLNML && celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 10 & cd VLNML/api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd go_backend && go run cmd/main/main.go"
+    command: sh -c "cd VLNML && celery -A celery_tasks.app_worker worker -l INFO --pool=prefork -c 15 & cd VLNML/api && uvicorn main:app --host 0.0.0.0 --port 8000 & cd go_backend && go run cmd/main/main.go"
     ports:
       - "8000:8000"
       - "9888:9888"

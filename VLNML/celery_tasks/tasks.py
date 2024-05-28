@@ -6,7 +6,7 @@ from celery import Task
 from celery.exceptions import MaxRetriesExceededError
 from .app_worker import app
 from .yolo import YoloModel
-from .core import Similarity, TextToSpeech
+from .core import Similarity, KeyWordExtractor, TextToSpeech
 from typing import List
 
 
@@ -51,6 +51,19 @@ class SimilarityTask(Task):
             logger.info("Loading Similarity Model...")
             self.model = Similarity()
             logger.info("Similarity Model loaded")
+        return self.run(*args, **kwargs)
+
+
+class KeywordExtractionTask(Task):
+    def __init__(self):
+        super().__init__()
+        self.model = None
+
+    def __call__(self, *args, **kwargs):
+        if not self.model:
+            logger.info("Loading Keywords Model...")
+            self.model = KeyWordExtractor()
+            logger.info("Keywords Model loaded")
         return self.run(*args, **kwargs)
 
 
@@ -115,6 +128,23 @@ def get_sim(self, data):
         return {"task_name": "get_sim", "status": "FAIL", "error": str(e)}
 
 
+@app.task(ignore_result=False, bind=True, base=KeywordExtractionTask)
+def get_keywords(self, data):
+    res: dict[list] = {}
+    logger.info("Processing Keywords .. ")
+    try:
+        doc = data.get("doc")
+
+        res["sentences"], res["keywords"] = self.model.filter_keywords(doc)
+        return {
+            "task_name": "get_keywords",
+            "status": "SUCCESS",
+            "result": res,
+        }
+    except (CeleryTasksException, Exception) as e:
+        return {"task_name": "get_tts", "status": "FAIL", "error": str(e)}
+
+
 @app.task(ignore_result=False, bind=True, base=TTSTask)
 def get_tts(self, data):
     try:
@@ -124,7 +154,6 @@ def get_tts(self, data):
         logger.debug("save_path = ", save_path)
 
         self.model.text_to_speech(text, save_path)
-
         return {
             "task_name": "get_sim",
             "status": "SUCCESS",

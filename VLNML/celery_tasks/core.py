@@ -1,3 +1,4 @@
+# _________ Component: Images Similarity _________
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from sentence_transformers import SentenceTransformer
@@ -7,27 +8,39 @@ from loguru import logger
 from openai import OpenAI
 from typing import List
 
+# Init global models, processors, and clients on server boot
+# logger.info("Loading Image Caption, Sentence Transformer....")
+# i2t_processor = BlipProcessor.from_pretrained(
+#     "Salesforce/blip-image-captioning-large"
+# )
+# i2t_model = BlipForConditionalGeneration.from_pretrained(
+#     "Salesforce/blip-image-captioning-large"
+# )
+# t2v_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+# logger.info("Finished!")
+
+
+# _________ Component: Text-to-Speech _________
 # from config.config import OPENAI_KEY
+
+# _________ Component: Keyword Extractor _________
+from sklearn.feature_extraction.text import CountVectorizer
+import nltk, string
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
+try:
+    nltk.data.find("tokenizers/stopwords")
+except LookupError:
+    nltk.download("stopwords")
 
 # from api.router.core_types import ImageScore
 # from api.models import ImageScore
-
-# For keyword extractor
-# from sklearn.feature_extraction.text import CountVectorizer
-# import pandas as pd
-# import nltk
-# from nltk.tokenize import sent_tokenize, word_tokenize
-# from nltk.corpus import stopwords
-
-# try:
-#     nltk.data.find('tokenizers/punkt')
-# except LookupError:
-#     nltk.download('punkt')
-
-# try:
-#     nltk.data.find('tokenizers/stopwords')
-# except LookupError:
-# nltk.download('stopwords')
 
 
 class Similarity:
@@ -94,6 +107,43 @@ class Similarity:
         return sim_results if sim_results else None
 
 
+class KeyWordExtractor:
+    """
+    ML Service: Phrases (tokens) and Keywords Generator
+    Usage: Supply with a document
+    """
+
+    def __init__(self):
+        # Possible modules: keyBERT, vlt5
+
+        pass
+
+    def filter_keywords(raw_text: str) -> list[str]:
+        # fp = open(file, encoding='UTF-8')
+        # raw_text = fp.read()
+
+        # Tokenize --> Sentences
+        sentences = sent_tokenize(raw_text)
+        logger.info(f"N Sen = {len(sentences)}\n")
+        stop_words = set(stopwords.words("english"))
+        filtered_sentences = []
+
+        # Extract Keywords per tokens / sentence
+        for sentence in sentences:
+            words = word_tokenize(sentence)
+            filtered_sentence = [
+                word for word in words if word.lower() not in stop_words
+            ]
+            filtered_sentences.append(filtered_sentence)
+        trash = list(string.punctuation) + list(string.whitespace)
+        preprocessed_text = [
+            " ".join(word for word in sentence if word not in trash)
+            for sentence in filtered_sentences
+        ]
+
+        return sentences, preprocessed_text
+
+
 class TextToSpeech:
     """
     ML Service: Generate speech from text
@@ -121,30 +171,3 @@ class TextToSpeech:
             logger.info(f"{save_path} TTS created!")
         except Exception as e:
             logger.error(e)
-
-
-# REMOVE STOPWORDS AND RETURN A PREPROCESSED STRING
-# def filter_keywords(raw_text: str) -> str:
-
-# sentences = sent_tokenize(raw_text)
-
-# stop_words = set(stopwords.words('english'))
-
-# filtered_sentences = []
-
-# for sentence in sentences:
-#     words = word_tokenize(sentence)
-#     filtered_sentence = [word for word in words if word.lower() not in stop_words]
-#     filtered_sentences.append(filtered_sentence)
-
-# #up until now filtered_sentences is a list of keywords
-# print(filtered_sentences)
-
-# #join the keywords to return a single string object
-# preprocessed_text = [' '.join(sentence) for sentence in filtered_sentences]
-
-# # print(preprocessed_text) #list
-# # for sentence in preprocessed_text:
-# #     print(sentence)
-
-# return preprocessed_text

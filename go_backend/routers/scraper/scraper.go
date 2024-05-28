@@ -225,7 +225,7 @@ func filterImages(images []*googlescraper.Image, q_keyword string) ([]imageScore
 	image_scores := getImageScores(similarity_scores, images)
 	simWeight, qualityWeight := config.GetWeight()
 	log.Println("simWeight = ", simWeight, "qualityWeight = ", qualityWeight)
-	log.Println("[BEFORE] image_scores ", image_scores)
+
 	//todo the weighting function needs implementation
 	sort.Slice(image_scores, func(i, j int) bool {
 		s1, s2 := image_scores[i], image_scores[j]
@@ -236,7 +236,7 @@ func filterImages(images []*googlescraper.Image, q_keyword string) ([]imageScore
 		// HIGHER weighted sum is considered favorable
 		return weight1 > weight2
 	})
-	log.Println("[AFTER] image_scores ", image_scores)
+	log.Println("[Weighted] image_scores ", image_scores)
 
 	return image_scores, nil
 }
@@ -261,34 +261,11 @@ var (
 	mutex   sync.RWMutex
 )
 
+func ProcessDoc(c *gin.Context) {
+
+}
+
 func GetImages(c *gin.Context) {
-	/*
-	   request format in params:
-	   {
-	       query: query key word for google
-	   }
-
-	   response: returns the top image for the frame based on the scraped result
-	*/
-
-	// query, key := c.GetQuery("query")
-	// if !key {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"Error: ": "Invalid request parameter for getting image",
-	// 	})
-	// 	c.Abort()
-	// }
-
-	//////WHAT MINH ADDED TO SCRAPER/////////////////////
-	// query, err := docprep.ExtractKeywords()
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{
-	// 		"error": "Error while extracting keywords",
-	// 	})
-	// 	return
-	// }
-	/////////////////////////////////////////////////////
-
 	// Image Selection Process
 	taskID := uuid.New().String()
 

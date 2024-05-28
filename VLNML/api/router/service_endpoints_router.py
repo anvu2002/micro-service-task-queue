@@ -9,7 +9,7 @@ from loguru import logger
 from typing import List
 import uuid
 
-from celery_tasks.tasks import predict_image, get_sim, get_tts
+from celery_tasks.tasks import predict_image, get_sim, get_keywords, get_tts
 from celery.result import AsyncResult
 from models import Task, Prediction
 
@@ -49,6 +49,35 @@ async def get_similarity(request: Request):
         logger.error(err)
         return JSONResponse(
             status_code=400, content={"TASK": "get_similarity", "status": "FAILED"}
+        )
+
+
+@router.post("/process_keywords")
+async def extract_keywords(request: Request):
+    """
+    Usage: Extract Keywords
+    request format:
+    {
+        "filename": doc.pdf,
+    }
+    """
+    tasks = []
+    try:
+        d = {}
+        data = await request.json()
+        # Need Data Validation (data models)
+        task_id = get_keywords.delay(data)
+        d["task_id"] = str(task_id)
+        d["task_name"] = extract_keywords.__name__
+        d["status"] = "PROCESSING"
+        d["url_result"] = f"/api/result/{task_id}"
+        d["requested_data"] = data
+        tasks.append(d)
+        return JSONResponse(status_code=202, content=tasks)
+    except Exception as err:
+        logger.error(err)
+        return JSONResponse(
+            status_code=400, content={"TASK": "extract_keywords", "status": "FAILED"}
         )
 
 
