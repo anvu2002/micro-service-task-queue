@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"VLN-backend/config"
+	docprep "VLN-backend/internal/doc-prep"
 	googlescraper "VLN-backend/internal/google-scraper"
 	"bytes"
 	"encoding/json"
@@ -257,11 +258,54 @@ func sanitizeQueryString(query string) string {
 }
 
 var (
-	taskMap = make(map[string][]imageScore)
-	mutex   sync.RWMutex
+	taskMap         = make(map[string][]imageScore)
+	taskMapKeyWords = make(map[string]docprep.KeywordResponse)
+	mutex           sync.RWMutex
 )
 
 func ProcessDoc(c *gin.Context) {
+	/*
+	   request format in params:
+	   {
+	       file_name: doc file
+	   }
+
+	   response: returns list of keywords and sentence
+	*/
+	taskID := uuid.New().String()
+
+	go func(id string) {
+		file_name, key := c.GetQuery("file_name")
+		if !key {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Error: ": "Invalid request parameter for processing doc",
+			})
+			c.Abort()
+		}
+		log.Println("[*] Processing file = ", file_name)
+		log.Println("[*] Goroutine TaskID = ", id)
+
+		keywords, err := docprep.ExtractKeywords(file_name)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"Status": "Error while extracting keywords",
+				"error":  err,
+			})
+			c.Abort()
+
+		}
+
+		log.Println("keywords = ", keywords)
+		mutex.Lock()
+		defer mutex.Unlock()
+		taskMapKeyWords[id] = keywords
+	}(taskID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"go_task_id": taskID,
+		"endpoint":   "process_doc",
+		"status":     "PROCESSING",
+	})
 
 }
 
@@ -274,7 +318,7 @@ func GetImages(c *gin.Context) {
 		query, key := c.GetQuery("query")
 
 		log.Println("[*] Processing query = ", query)
-		log.Println("[*] TaskID = ", id)
+		log.Println("[*] Goroutine TaskID = ", id)
 
 		if !key {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -324,11 +368,42 @@ func GetImages(c *gin.Context) {
 	}(taskID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"task_id":  taskID,
-		"endpoint": "get_images",
-		"status":   "PROCESSING",
+		"go_task_id": taskID,
+		"endpoint":   "get_images",
+		"status":     "PROCESSING",
 	})
 
+}
+
+func GetKeywordStatus(c *gin.Context) {
+	// get taskID from query param
+	taskID, key := c.GetQuery("task_id")
+	// log.Println(" Current taskMap = ", taskMap)
+	if !key {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error: ": "Invalid request parameter",
+			"State: ": "Retrieve task status",
+		})
+		c.Abort()
+	}
+
+	mutex.RLock()
+	defer mutex.RUnlock()
+	log.Println("taskMapKeyWords = ", taskMapKeyWords[taskID])
+	if keywords, ok := taskMapKeyWords[taskID]; ok {
+		// log.Printf("COMPLETED task_id = %s", taskID)
+		c.JSON(http.StatusOK, gin.H{
+			"task_id":  taskID,
+			"status":   "SUCCESS",
+			"keywords": keywords,
+		})
+
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"task_id": taskID,
+			"status":  "PENDING",
+		})
+	}
 }
 
 func GetImageStatus(c *gin.Context) {

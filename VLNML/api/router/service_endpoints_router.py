@@ -58,7 +58,7 @@ async def extract_keywords(request: Request):
     Usage: Extract Keywords
     request format:
     {
-        "filename": doc.pdf,
+        "raw_text": "bla bla bla bla bla bla .. bleh ble",
     }
     """
     tasks = []

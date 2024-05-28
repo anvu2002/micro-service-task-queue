@@ -133,8 +133,10 @@ def get_keywords(self, data):
     res: dict[list] = {}
     logger.info("Processing Keywords .. ")
     try:
-        doc = data.get("doc")
-
+        doc = data.get("raw_text")
+        logger.debug(type(doc))
+        print(doc)
+        logger.debug(len(doc))
         res["sentences"], res["keywords"] = self.model.filter_keywords(doc)
         return {
             "task_name": "get_keywords",

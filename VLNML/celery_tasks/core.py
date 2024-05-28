@@ -115,29 +115,54 @@ class KeyWordExtractor:
 
     def __init__(self):
         # Possible modules: keyBERT, vlt5
-
         pass
 
-    def filter_keywords(raw_text: str) -> list[str]:
-        # fp = open(file, encoding='UTF-8')
-        # raw_text = fp.read()
+    def is_url(self, word):
+        """
+        Checks if a word is a URL.
+        """
+        return (
+            word.startswith("http://")
+            or word.startswith("https://")
+            or word.startswith("www.")
+        )
 
-        # Tokenize --> Sentences
+    def filter_keywords(self, raw_text: str) -> dict[list]:
+        """
+        Filters out URLs, stopwords, and punctuation from the text, and returns the processed sentences.
+
+        Args:
+        raw_text (str): The input text to be processed.
+
+        Returns:
+        list: The original sentences and the preprocessed text.
+        """
+        # Tokenize the text into sentences
         sentences = sent_tokenize(raw_text)
         logger.info(f"N Sen = {len(sentences)}\n")
+
+        # Define stopwords
         stop_words = set(stopwords.words("english"))
         filtered_sentences = []
 
-        # Extract Keywords per tokens / sentence
+        # Extract keywords per token / sentence
         for sentence in sentences:
             words = word_tokenize(sentence)
             filtered_sentence = [
                 word for word in words if word.lower() not in stop_words
             ]
             filtered_sentences.append(filtered_sentence)
+
+        # Define trash characters
         trash = list(string.punctuation) + list(string.whitespace)
+
+        # Remove unwanted characters and filter out URLs
         preprocessed_text = [
-            " ".join(word for word in sentence if word not in trash)
+            " ".join(
+                "".join(char for char in word if char not in trash)
+                for word in sentence
+                if not self.is_url(word)
+            )
             for sentence in filtered_sentences
         ]
 
