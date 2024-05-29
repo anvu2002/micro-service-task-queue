@@ -163,7 +163,7 @@ jQuery(document).ready(function () {
                         url: URL_GO_KEYWORD_STATUS + status_list[i],
                         success: function (data) {
                             console.log("SUCCEED query ",URL_GO_KEYWORD_STATUS + status_list[i])
-                            console.log("data = ",data)
+                            console.log("/process_doc data = ",data)
                             id = status_list[i]
                             status = data['status']
                             $('#' + id).html(status)
