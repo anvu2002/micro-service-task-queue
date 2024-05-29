@@ -3,6 +3,8 @@ package routers
 import (
 	"VLN-backend/routers/health"
 	"VLN-backend/routers/inference"
+	"VLN-backend/routers/video_gen"
+
 	"VLN-backend/routers/scraper"
 	"VLN-backend/routers/test"
 
@@ -33,14 +35,17 @@ func InitRouter() *gin.Engine {
 	// Gin API Endpoints
 	r.GET("/health", health.GetHealth)
 
-	r.POST("/tts", inference.TextToSpeech)
-	r.GET("/tts_status", inference.GetTtsStatus)
+	r.POST("/process_doc", scraper.ProcessDoc)
+	r.GET("/keyword_status", scraper.GetKeywordStatus)
 
 	r.POST("/get_images", scraper.GetImages)
 	r.GET("/image_status", scraper.GetImageStatus)
 
-	r.POST("/process_doc", scraper.ProcessDoc)
-	r.GET("/keyword_status", scraper.GetKeywordStatus)
+	r.POST("/tts", inference.TextToSpeech)
+	r.GET("/tts_status", inference.GetTtsStatus)
+
+	r.POST("/get_ffmpeg", video_gen.CreateVideo)
+	r.GET("/video_status", video_gen.GetVideotatus)
 
 	// Testing endpoints
 	r.POST("/test_start_task", test.StartTask)

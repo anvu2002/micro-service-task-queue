@@ -23,3 +23,9 @@ func Concat(save_path string, frames_path string) []byte {
 	fmt.Print(err)
 	return out
 }
+
+func Test(audio_path string, images string) (string, error) {
+	res := string("FFMPEG endpoint is working!")
+
+	return res, nil
+}
