@@ -80,13 +80,16 @@ jQuery(document).ready(function () {
     });
 
     function continueTasks(keywords) {
+        console.log("---- Move to tts and get_images ----- ")
+
         var imageTaskID, sentenceTaskId;
 
         $.ajax({
             url: URL_GO + '/get_images?query=' + encodeURIComponent(keywords['keywords']),
-            type: 'get'
+            type: 'get',
         }).done(function (data) {
             imageTaskID = data['go_task_id'];
+            console.log("imageTaskID =", imageTaskID)
         });
 
         $.ajax({
@@ -94,6 +97,8 @@ jQuery(document).ready(function () {
             type: 'get'
         }).done(function (data) {
             sentenceTaskId = data['go_task_id'];
+            console.log("imageTaskID =", sentenceTaskId)
+
         });
 
         var interval = setInterval(function () {
@@ -130,7 +135,7 @@ jQuery(document).ready(function () {
 
     function ffmpegTask(){
         $.ajax({
-            url: URL_GO + '/get_ffmpeg?query=started',
+            url: URL_GO + '/get_ffmpeg?audio_path=./audio&image_path=./images',
             type: 'get',
             success: function (data) {
                 console.log("[Final Task] ffmpeg Completed", data);

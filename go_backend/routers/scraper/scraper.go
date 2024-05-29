@@ -392,7 +392,7 @@ func GetKeywordStatus(c *gin.Context) {
 
 	mutex.RLock()
 	defer mutex.RUnlock()
-	log.Println("taskMapKeyWords = ", taskMapKeyWords[taskID])
+
 	if keywords, ok := taskMapKeyWords[taskID]; ok {
 		// log.Printf("COMPLETED task_id = %s", taskID)
 		c.JSON(http.StatusOK, gin.H{
