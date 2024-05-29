@@ -81,7 +81,9 @@ func ExtractKeywords(file string) (KeywordResponse, error) {
 		return KeywordResponse{}, err
 	}
 
-	requestBody, err := json.Marshal(KeywordExtractionRequest{RawText: *pdfData})
+	requestBody, err := json.Marshal(KeywordExtractionRequest{
+		RawText: *pdfData})
+
 	if err != nil {
 		return KeywordResponse{}, err
 	}

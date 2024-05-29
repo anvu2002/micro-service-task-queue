@@ -132,27 +132,14 @@ jQuery(document).ready(function () {
             console.log("[ML SERVICE] process_doc")
             },
         }).done(function (jsondata, textStatus, jqXHR) {
-            console.log(" JSON0 --- /process_doc = ", jsondata)
+            console.log(" JSON --- /process_doc = ", jsondata)
             task_id = jsondata['go_task_id']
             status = jsondata['status']
             console.log("go_task_id = ", task_id)
 
             status_list.push(task_id)
 
-            // for (i = 0; i < jsondata.length; i++) {
-            //     task_id = jsondata['go_task_id']
-            //     status = jsondata['status']
-            //     console.log("task_id = ", task_id)
-
-            //     // results.push(URL_GO + jsondata[i]['url_result'])
-            //     status_list.push(task_id)
-            //     result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-get-images" data=${i}>View</a>`
-            //     $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
-            //     $("#row_results").show();
-            // }
-
-            // Phase 2: Probe requested Go Service status
-
+            // Phase 2: Probe Go for process_doc status every 1 second
             var interval = setInterval(refresh, 1000);
             var fake_progress = 0
             function refresh() {
@@ -185,11 +172,12 @@ jQuery(document).ready(function () {
                     });
                 }
                 if (n_success == status_list.length) {
-
                     $('#progress-bar').hide();
                     clearInterval(interval);
+
                 }
             }
+
         }).fail(function (jsondata, textStatus, jqXHR) {
             console.log(jsondata)
             $("#row_results").hide();

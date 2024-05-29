@@ -376,7 +376,8 @@ func GetImages(c *gin.Context) {
 
 }
 
-// Section: Query Process
+// Section: Query Process Status
+
 func GetKeywordStatus(c *gin.Context) {
 	// get taskID from query param
 	taskID, key := c.GetQuery("task_id")

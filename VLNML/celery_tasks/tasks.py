@@ -150,6 +150,10 @@ def get_keywords(self, data):
 @app.task(ignore_result=False, bind=True, base=TTSTask)
 def get_tts(self, data):
     try:
+        logger.debug(data)
+        logger.debug(type(data))
+
+        print("-------------------")
         text, save_path = data.get("text"), data.get("save_path")
 
         logger.debug("text = ", text)
@@ -159,7 +163,7 @@ def get_tts(self, data):
         return {
             "task_name": "get_sim",
             "status": "SUCCESS",
-            "result": save_path,
+            "result": {"save_path": save_path, "text": text},
         }
     except (CeleryTasksException, Exception) as e:
         return {"task_name": "get_tts", "status": "FAIL", "error": str(e)}

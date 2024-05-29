@@ -32,7 +32,10 @@ func InitRouter() *gin.Engine {
 
 	// Gin API Endpoints
 	r.GET("/health", health.GetHealth)
+
 	r.POST("/tts", inference.TextToSpeech)
+	r.GET("/tts_status", inference.GetTtsStatus)
+
 	r.POST("/get_images", scraper.GetImages)
 	r.GET("/image_status", scraper.GetImageStatus)
 
