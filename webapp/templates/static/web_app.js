@@ -1,7 +1,7 @@
 // var URL = 'http://localhost:8000'  -- VLNML API endpoints
 var URL_GO = 'http://localhost:9888'
-var URL_GO_IMAGE_STATUS = 'localhost:9888/image_status?task_id='
-var URL_GO_KEYWORD_STATUS = 'localhost:9888/keyword_status?task_id='
+var URL_GO_IMAGE_STATUS = 'http://localhost:9888/image_status?task_id='
+var URL_GO_KEYWORD_STATUS = 'http://localhost:9888/keyword_status?task_id='
 
 var URL_VLNML = 'http://localhost:8000'
 
@@ -162,7 +162,7 @@ jQuery(document).ready(function () {
                     $.ajax({
                         url: URL_GO_KEYWORD_STATUS + status_list[i],
                         success: function (data) {
-                            console.log("SUCCEED query ",url)
+                            console.log("SUCCEED query ",URL_GO_KEYWORD_STATUS + status_list[i])
                             console.log("data = ",data)
                             id = status_list[i]
                             status = data['status']

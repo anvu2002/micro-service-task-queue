@@ -22,10 +22,10 @@ func InitRouter() *gin.Engine {
 		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"*"},
 		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return origin == "https://github.com"
-		},
-		MaxAge: 12 * time.Hour,
+		// AllowOriginFunc: func(origin string) bool {
+		// 	return origin == "https://github.com"
+		// },
+		MaxAge: 24 * time.Hour,
 	}))
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
