@@ -1,6 +1,7 @@
 // var URL = 'http://localhost:8000'  -- VLNML API endpoints
 var URL_GO = 'http://localhost:9888'
-var URL_GO_STATUS = 'localhost:9888/status?task_id='
+var URL_GO_IMAGE_STATUS = 'localhost:9888/image_status?task_id='
+var URL_GO_KEYWORD_STATUS = 'localhost:9888/keyword_status?task_id='
 
 var URL_VLNML = 'http://localhost:8000'
 
@@ -13,7 +14,7 @@ jQuery(document).ready(function () {
     $("#row_results").hide();
     $('#progress-bar').hide();
 
-    // Index Buttons
+    // MAIN Buttons
     $('#btn-detect').on('click', function () {
         // Phase 1: Request ML Service
         var form_data = new FormData();
@@ -114,6 +115,88 @@ jQuery(document).ready(function () {
 
     })
 
+    $('#btn-get-video').on('click', function () {
+        // Phase 1: Request Go Service
+        var prompt = $('#file_prompt').val();
+        var file_name = encodeURIComponent(prompt);
+
+        $.ajax({
+            url: URL_GO + '/process_doc?file_name=' + file_name,
+            type: "post",
+            beforeSend: function () {
+                results = []
+                status_list = []
+                $("#table_result > tbody").html('');
+                $('#row_detail').hide();
+                $("#row_results").hide();
+            console.log("[ML SERVICE] process_doc")
+            },
+        }).done(function (jsondata, textStatus, jqXHR) {
+            console.log(" JSON0 --- /process_doc = ", jsondata)
+            task_id = jsondata['go_task_id']
+            status = jsondata['status']
+            console.log("go_task_id = ", task_id)
+
+            status_list.push(task_id)
+
+            // for (i = 0; i < jsondata.length; i++) {
+            //     task_id = jsondata['go_task_id']
+            //     status = jsondata['status']
+            //     console.log("task_id = ", task_id)
+
+            //     // results.push(URL_GO + jsondata[i]['url_result'])
+            //     status_list.push(task_id)
+            //     result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-get-images" data=${i}>View</a>`
+            //     $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
+            //     $("#row_results").show();
+            // }
+
+            // Phase 2: Probe requested Go Service status
+
+            var interval = setInterval(refresh, 1000);
+            var fake_progress = 0
+            function refresh() {
+                n_success = 0
+                console.log("status_list.lenght", status_list.length)
+                for (i = 0; i < status_list.length; i++) {
+                    $.ajax({
+                        url: URL_GO_KEYWORD_STATUS + status_list[i],
+                        success: function (data) {
+                            console.log("SUCCEED query ",url)
+                            console.log("data = ",data)
+                            id = status_list[i]
+                            status = data['status']
+                            $('#' + id).html(status)
+                            if ((status == 'SUCCESS') || (status == 'FAILED')) {
+                                $($('#' + id).siblings()[1]).children().show()
+                                n_success++
+                            }
+
+                            // Show progress bar and label
+                            console.log("fake_progress",fake_progress)
+                            $('#progress-bar').css('--p', fake_progress);
+                            $('#progress-bar').show();
+                            if (fake_progress < 100) {
+                                fake_progress += Math.floor(Math.random() * 10) + 1;
+                            }
+
+                        },
+                        async: false
+                    });
+                }
+                if (n_success == status_list.length) {
+
+                    $('#progress-bar').hide();
+                    clearInterval(interval);
+                }
+            }
+        }).fail(function (jsondata, textStatus, jqXHR) {
+            console.log(jsondata)
+            $("#row_results").hide();
+        });
+    })
+
+
     $('#btn-get-images').on('click', function () {
         // Phase 1: Request Go Service
         var prompt = $('#keyword_prompt').val();
@@ -132,15 +215,18 @@ jQuery(document).ready(function () {
             },
         }).done(function (jsondata, textStatus, jqXHR) {
             console.log("Resp (/get_images) = ", jsondata)
-            for (i = 0; i < jsondata.length; i++) {
-                task_id = jsondata['task_id']
-                status = jsondata['status']
-                // results.push(URL_GO + jsondata[i]['url_result'])
-                status_list.push(task_id)
-                result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-get-images" data=${i}>View</a>`
-                $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
-                $("#row_results").show();
-            }
+            task_id = jsondata['go_task_id']
+            status = jsondata['status']
+            status_list.push(task_id)
+            // for (i = 0; i < jsondata.length; i++) {
+            //     task_id = jsondata['go_task_id']
+            //     status = jsondata['status']
+            //     // results.push(URL_GO + jsondata[i]['url_result'])
+            //     status_list.push(task_id)
+            //     result_button = `<button class="btn btn-small btn-success" style="display: none" id="btn-view-get-images" data=${i}>View</a>`
+            //     $("#table_result > tbody").append(`<tr><td>${task_id}</td><td id=${task_id}>${status}</td><td>${result_button}</td></tr>`);
+            //     $("#row_results").show();
+            // }
 
             // Phase 2: Probe requested Go Service status
 
@@ -150,7 +236,7 @@ jQuery(document).ready(function () {
                 n_success = 0
                 for (i = 0; i < status_list.length; i++) {
                     $.ajax({
-                        url: URL_GO_STATUS + status_list[i],
+                        url:  URL_GO_IMAGE_STATUS + status_list[i],
                         success: function (data) {
                             console.log("SUCCEED query get_image Status on GO")
                             console.log("data = ",data)

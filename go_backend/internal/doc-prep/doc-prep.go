@@ -78,7 +78,7 @@ func ExtractKeywords(file string) (KeywordResponse, error) {
 	// Read the PDF file.
 	pdfData, err := readPdf(filepath)
 	if err != nil {
-		log.Fatalf("error reading PDF: %v", err)
+		return KeywordResponse{}, err
 	}
 
 	requestBody, err := json.Marshal(KeywordExtractionRequest{RawText: *pdfData})

@@ -263,6 +263,7 @@ var (
 	mutex           sync.RWMutex
 )
 
+// Section: Process
 func ProcessDoc(c *gin.Context) {
 	/*
 	   request format in params:
@@ -375,6 +376,7 @@ func GetImages(c *gin.Context) {
 
 }
 
+// Section: Query Process
 func GetKeywordStatus(c *gin.Context) {
 	// get taskID from query param
 	taskID, key := c.GetQuery("task_id")
