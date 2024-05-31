@@ -7,11 +7,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -258,7 +256,7 @@ func sanitizeQueryString(query string) string {
 }
 
 var (
-	taskMap         = make(map[string][]imageScore)
+	taskMapImages   = make(map[string][][]imageScore)
 	taskMapKeyWords = make(map[string]docprep.KeywordResponse)
 	mutex           sync.RWMutex
 )
@@ -310,70 +308,99 @@ func ProcessDoc(c *gin.Context) {
 
 }
 
+type queryPayload struct {
+	Query []string `json:"query"`
+}
+
 func GetImages(c *gin.Context) {
-	// Image Selection Process
+	/*
+		{
+			"query" : ["keyword1", "keyword2"]
+		}
+	*/
 	taskID := uuid.New().String()
+	var query queryPayload
+	if err := c.BindJSON(&query); err != nil {
+		log.Println("Error when mapping query payload:", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error":    "Invalid request parameter",
+			"Expected": "query:[keyword1, keyword2]",
+			"State":    "Getting images",
+		})
+		return
+	}
 
-	// goroutine <-- 1 query
-	go func(id string) {
-		query, key := c.GetQuery("query")
-
-		log.Println("[*] Processing query = ", query)
-		log.Println("[*] Goroutine TaskID = ", id)
-
-		if !key {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"Error: ": "Invalid request parameter ",
-				"State: ": "Getting images",
-			})
-			c.Abort()
-		}
-
-		images, err := googlescraper.ImageSearch(query)
-		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"Error: ": "Error while getting image from google",
-			})
-			c.Abort()
-		}
-
-		images, e := googlescraper.DownloadImages(sanitizeQueryString(query), images[:10])
-		if e != nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"Status: ": "Error while downloading image from google",
-				"Error: ":  e,
-			})
-			c.Abort()
-		}
-
-		// Request ML service -- VLNML
-		// var images []*googlescraper.Image
-		a, b := config.GetWeight()
-		if a == 0 && b == 0 {
-			fmt.Println("ERROR while getting Weighted values --  exiting the GO backend")
-			os.Exit(1)
-		}
-		image_scores, err := filterImages(images, query)
-		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{
-				"Status: ": "Error while filtering downloaded images",
-				"Error":    err,
-			})
-			c.Abort()
-		}
-
-		// Update task status with the generated image list
-		mutex.Lock()
-		defer mutex.Unlock()
-		taskMap[id] = image_scores
-	}(taskID)
-
+	// Respond to the client immediately
 	c.JSON(http.StatusOK, gin.H{
 		"go_task_id": taskID,
 		"endpoint":   "get_images",
 		"status":     "PROCESSING",
 	})
 
+	// Goroutine to process the query
+	go func(id string, query queryPayload) {
+		log.Println("[*] Processing query =", query)
+		log.Println("[*] Goroutine TaskID =", id)
+
+		var wg sync.WaitGroup
+		totalImageScores := make([][]imageScore, len(query.Query))
+		errChan := make(chan error, len(query.Query))
+
+		for i, keyword := range query.Query {
+			wg.Add(1)
+			go func(i int, keyword string) {
+				defer wg.Done()
+
+				// Image search
+				images, err := googlescraper.ImageSearch(keyword)
+				if err != nil {
+					log.Printf("Error while getting image from google for keyword %s: %v", keyword, err)
+					errChan <- err
+					return
+				}
+
+				// Download images
+				images, err = googlescraper.DownloadImages(sanitizeQueryString(keyword), images[:10])
+				if err != nil {
+					log.Printf("Error while downloading image from google for keyword %s: %v", keyword, err)
+					errChan <- err
+					return
+				}
+
+				// Get weight from config
+				a, b := config.GetWeight()
+				if a == 0 && b == 0 {
+					log.Fatal("ERROR while getting Weighted values -- exiting the GO backend")
+				}
+
+				// Filter images
+				imageScores, err := filterImages(images, keyword)
+				if err != nil {
+					log.Printf("Error while filtering downloaded images for keyword %s: %v", keyword, err)
+					errChan <- err
+					return
+				}
+
+				totalImageScores[i] = imageScores
+			}(i, keyword)
+		}
+
+		// Wait for all goroutines to complete
+		wg.Wait()
+		close(errChan)
+
+		// Check for errors
+		if len(errChan) > 0 {
+			log.Printf("There were errors during processing. See logs for details.")
+			return
+		}
+
+		// Update image task status with the generated image list per keyword
+		mutex.Lock()
+		taskMapImages[id] = totalImageScores
+		mutex.Unlock()
+
+	}(taskID, query)
 }
 
 // Section: Query Process Status
@@ -424,7 +451,7 @@ func GetImageStatus(c *gin.Context) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	if image_scores, ok := taskMap[taskID]; ok {
+	if image_scores, ok := taskMapImages[taskID]; ok {
 		// log.Printf("COMPLETED task_id = %s", taskID)
 		c.JSON(http.StatusOK, gin.H{
 			"task_id":      taskID,

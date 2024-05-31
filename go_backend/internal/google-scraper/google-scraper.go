@@ -1,7 +1,7 @@
 package googlescraper
 
 import (
-	"VLN-backend/config"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	g "github.com/serpapi/google-search-results-golang"
 )
 
 type Image struct {
@@ -20,20 +18,77 @@ type Image struct {
 	Height    float64
 }
 
+func save_images(query string, images_results []interface{}) (string, error) {
+	filePath := fmt.Sprintf("%s_images_results.json", query)
+	content, err := json.Marshal(images_results)
+	if err != nil {
+		return "", err
+	}
+
+	err = os.WriteFile(filePath, content, 0644)
+	if err != nil {
+		return "", err
+	}
+	log.Println("Wrote to ", filePath)
+
+	return filePath, nil
+
+}
+
+func read_images(data_file string) ([]interface{}, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("failed to get current working directory: %v", err)
+	}
+
+	filepath := cwd + "/internal/google-scraper/" + data_file
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	var images_results []interface{}
+	err = json.Unmarshal(content, &images_results)
+	if err != nil {
+		return nil, err
+	}
+
+	return images_results, nil
+}
+
 func ImageSearch(query string) ([]*Image, error) {
 
 	type ImageItem = map[string]interface{}
+	// Read from saved image_results
+	filePath := fmt.Sprintf("%s_images_results.json", query)
 
-	serpapi_key := config.GetSerapAPIKey()
-	parameter := map[string]string{
-		"engine":  "google_images",
-		"q":       query,
-		"api_key": serpapi_key,
+	images_results, err := read_images(filePath)
+	if err != nil {
+		log.Println("Failed to read image_results content --", err)
+		return nil, err
 	}
 
-	search := g.NewGoogleSearch(parameter, serpapi_key)
-	results, err := search.GetJSON()
-	images_results := results["images_results"].([]interface{})
+	// serpapi_key := config.GetSerapAPIKey()
+	// parameter := map[string]string{
+	// 	"engine":  "google_images",
+	// 	"q":       query,
+	// 	"api_key": serpapi_key,
+	// }
+
+	// search := g.NewGoogleSearch(parameter, serpapi_key)
+	// results, err := search.GetJSON()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// images_results := results["images_results"].([]interface{})
+
+	// FOr Storing images_results --> .json
+	// filepath, err := save_images(query, images_results)
+	// if err != nil {
+	// 	log.Println("Error when trying to save image_results content")
+	// 	return nil, err
+	// }
+
 	images := make([]*Image, 0)
 
 	for _, val := range images_results {
